@@ -1,0 +1,50 @@
+<query-editor-row query-ctrl="ctrl" can-collapse="false">
+
+  <div class="gf-form-inline">
+    <!-- FORMAT AS -->
+    <!--
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword">Format as</label>
+      <div class="gf-form-select-wrapper">
+        <select class="gf-form-input gf-size-auto" ng-model="ctrl.target.format" ng-options="f.value as f.text for f in ctrl.formats" ng-change="ctrl.refresh()"></select>
+      </div>
+    </div>
+    -->
+
+    <!-- FORMAT AS TABLE -->
+    <!--
+    <div class="gf-form" ng-show="ctrl.target.format=='table'">
+      <label class="gf-form-label query-keyword">Column Sort</label>
+      <div class="gf-form-select-wrapper">
+        <select class="gf-form-input gf-size-auto" ng-model="ctrl.target.columnSort" ng-options="f.value as f.text for f in ctrl.columnSorts" ng-change="ctrl.refresh()"></select>
+      </div>
+      <div class="gf-form gf-form-inline" ng-show="ctrl.target.columnSort=='CUSTOM'">
+        <label class="gf-form-label query-keyword">Column</label>
+        <input type="text"
+               class="gf-form-input width-15"
+               ng-model="ctrl.addColumnName"
+               bs-typeahead="ctrl.searchableTableColumns"
+               data-min-length=0
+               data-items=100>
+        <button class="btn btn-inverse" ng-click="ctrl.addColumn()">
+          <i class="fa fa-plus"></i>
+        </button>
+        <div class="gf-form gf-form-inline" ng-repeat="columnText in ctrl.target.customColumnOrder">
+          <span class="badge" style="margin-left: 1px; margin-right: 1px">{{columnText}}
+            <button class="btn btn-inverse btn-small" ng-click="ctrl.removeColumn(columnText)">
+              <i class="fa fa-times fa-lg"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+    -->
+
+  </div>
+
+
+  <div class="gf-form" ng-show="ctrl.lastQueryError">
+    <pre class="gf-form-pre alert alert-error">{{ctrl.lastQueryError}}</pre>
+  </div>
+
+</query-editor-row>
