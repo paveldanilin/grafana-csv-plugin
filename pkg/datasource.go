@@ -145,17 +145,17 @@ func (ds *CSVFileDatasource) queryLocalCsv(refId string, csvDesc *csv.FileDescri
 	}
 }
 
-func (ds *CSVFileDatasource) toTable(csvFile *csv.File) *datasource.Table {
+func (ds *CSVFileDatasource) toTable(csvTable *csv.Table) *datasource.Table {
 	table := &datasource.Table{
 		Columns: []*datasource.TableColumn{},
 		Rows:    make([]*datasource.TableRow, 0),
 	}
 
-	for _, columnName := range csvFile.Columns {
+	for _, columnName := range csvTable.Columns {
 		table.Columns = append(table.Columns, &datasource.TableColumn{Name: columnName})
 	}
 
-	for _, row := range csvFile.Rows {
+	for _, row := range csvTable.Rows {
 		tableRow := &datasource.TableRow{
 			Values: make([]*datasource.RowValue, 0),
 		}

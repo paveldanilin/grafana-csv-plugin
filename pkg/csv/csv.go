@@ -3,7 +3,6 @@ package csv
 import (
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"os"
 )
 
@@ -15,51 +14,7 @@ type FileDescriptor struct {
 	FieldsPerRecord int
 }
 
-type File struct {
-	Columns []string
-	Rows    [][]string
-}
-
-func (c *File) RowsCount() int {
-	return len(c.Rows)
-}
-
-func (c *File) ColumnIndex(column string) int {
-	for i, columnName := range c.Columns {
-		if columnName == column {
-			return i
-		}
-	}
-	return -1
-}
-
-func (c *File) HasColumn(column string) bool {
-	return c.ColumnIndex(column) != -1
-}
-
-func (c *File) GetRow(rowIndex int) ([]string, error) {
-	if rowIndex > c.RowsCount() {
-		return make([]string, 0), errors.New(fmt.Sprintf("the index [%d] is out of range", rowIndex))
-	}
-	return c.Rows[rowIndex], nil
-}
-
-// Returns nil when either there is no column with such name or there is no row with such index
-func (c *File) GetColumnValue(column string, rowIndex int) interface{} {
-	columnIndex := c.ColumnIndex(column)
-	if columnIndex == -1 {
-		return nil
-	}
-
-	row, err := c.GetRow(rowIndex)
-	if err != nil {
-		return nil
-	}
-
-	return row[columnIndex]
-}
-
-func Read(descriptor *FileDescriptor) (*File, error) {
+func Read(descriptor *FileDescriptor) (*Table, error) {
 	if descriptor == nil {
 		return nil, errors.New("file descriptor is missed")
 	}
@@ -82,7 +37,7 @@ func Read(descriptor *FileDescriptor) (*File, error) {
 		return nil, err
 	}
 
-	csvFile := &File{
+	csvFile := &Table{
 		Columns: make([]string, 0),
 		Rows:    make([][]string, 0),
 	}
