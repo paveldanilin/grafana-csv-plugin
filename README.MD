@@ -1,16 +1,18 @@
-## CSV plugin
+## Grafana CSV datasource
 
-A simple Grafana backend plugin which allows:
-- Read a local CSV file and represents it as a table
-- Download remote CSV file by SFTP and represents it as a table
+Grafana backend plugin which allows you:
+- Read local CSV file
+- Download remote CSV file by SFTP
 
 ![](./doc/image/grid.png)
 
 ## Config
 - Local
+
 ![](./doc/image/config_local.png)
 
 - Remote
+
 ![](./doc/image/config_sftp.png)
 
 ## Build
