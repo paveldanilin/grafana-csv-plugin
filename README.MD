@@ -21,7 +21,11 @@ Grafana datasource which allows:
 ## Test
 - go test ./tests -v
 
+## Package
+`grafana-csv-plugin_1.0.0.zip` includes binary for windows and linux
+
 ## Install
-- Copy `dist` to `/etc/grafana/data/plugins/grafana-csv-plugin/`
+- Unpack `grafana-csv-plugin_1.0.0.zip` to `/etc/grafana/data/plugins/grafana-csv-plugin/`
+- Restart Grafana
 
 ###### Icon: https://freeicons.io/vector-file-types-icons/csv-icon-2272
