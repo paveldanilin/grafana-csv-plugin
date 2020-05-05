@@ -1,8 +1,8 @@
-## Grafana CSV datasource
+## Grafana CSV datasource plugin
 
-Grafana backend plugin which allows you:
+Grafana datasource which allows:
 - Read local CSV file
-- Download remote CSV file by SFTP
+- Read remote CSV file by SFTP
 
 ![](./doc/image/grid.png)
 
