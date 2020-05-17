@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 func MapToArray(m map[string]interface{}) []interface{} {
@@ -13,20 +14,6 @@ func MapToArray(m map[string]interface{}) []interface{} {
 		args = append(args, v)
 	}
 	return args
-}
-
-func GetStr(name string, data map[string]interface{}, def string) string {
-	if val, ok := data[name]; ok {
-		return val.(string)
-	}
-	return def
-}
-
-func GetBool(name string, data map[string]interface{}, def bool) bool {
-	if val, ok := data[name]; ok {
-		return val.(bool)
-	}
-	return def
 }
 
 func CheckFile(fileName string) error {
@@ -40,4 +27,14 @@ func CheckFile(fileName string) error {
 		return errors.New(fmt.Sprintf("there is no access to file `%s`", fileName))
 	}
 	return nil
+}
+
+func IsNumber(str string) bool {
+	_, err := strconv.ParseFloat(str, 64)
+	return err == nil
+}
+
+func IsInt(str string) bool {
+	_, err := strconv.ParseInt(str, 10, 64)
+	return err == nil
 }
