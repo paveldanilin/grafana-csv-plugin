@@ -3,8 +3,13 @@
 Grafana datasource which allows:
 - Read local CSV file
 - Read remote CSV file by SFTP
+- Filter data (thanks to a great [expr library](https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md))
 
 ![](./doc/image/grid.png)
+
+![](./doc/image/expr.png)
+
+![](./doc/image/expr1.png)
 
 ## Config
 - Local
@@ -19,7 +24,7 @@ Grafana datasource which allows:
 - npm run build
 
 ## Test
-- go test ./tests -v
+- npm test
 
 ## Install
 - Copy `dist` to `/etc/grafana/data/plugins/grafana-csv-plugin/`

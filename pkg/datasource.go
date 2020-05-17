@@ -39,6 +39,7 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		ds.resultWithError(result, errMsg)
 		return result, nil
 	}
+	ds.debugf("DatasourceModel=%s", dsModel.String())
 
 	queryModel, err := model.CreateQueryFrom(*req.Queries[0])
 	if err != nil {
@@ -47,6 +48,7 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		ds.resultWithError(result, errMsg)
 		return result, nil
 	}
+	ds.debugf("QueryModel=%s", queryModel.String())
 
 	// RefId is hardcoded in datasource.js
 	if queryModel.RefID == "[tests-connection]" {
@@ -92,25 +94,19 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryM
 	csvFilename := dsModel.Filename
 
 	if dsModel.AccessMode == model.AccessMode_SFTP {
-		downloadedFile, err := sftp.GetFile(sftp.ConnectionConfig{
-			Host:          dsModel.SftpHost,
-			Port:          dsModel.SftpPort,
-			User:          dsModel.SftpUser,
-			Password:      dsModel.SftpPassword,
-			Timeout:       time.Second * 30,
-			IgnoreHostKey: dsModel.SftpIgnoreHostKey,
-		}, csvFilename, dsModel.SftpWorkingDir)
+		ds.debugf("Going to download remote file `%s`", csvFilename)
+		downloadedFile, err := ds.getRemoteFile(csvFilename, dsModel)
 		if err != nil {
-			ds.logError(fmt.Sprintf("Could not download CSV data file: %s", err.Error()))
 			return &datasource.QueryResult{
 				Error: fmt.Sprintf("Could not download CSV data file: %s", err.Error()),
 				RefId: queryModel.RefID,
 			}
 		}
+		ds.debugf("File has been downloaded %s->%s", csvFilename, downloadedFile)
 		csvFilename = downloadedFile
 	}
 
-	return ds.queryLocalCsv(queryModel.RefID, &csv.FileDescriptor{
+	return ds.queryLocalCsv(queryModel, &csv.FileDescriptor{
 		Filename:         csvFilename,
 		Delimiter:        rune(dsModel.CsvDelimiter[0]),
 		Comment:          rune(dsModel.CsvComment[0]),
@@ -119,28 +115,52 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryM
 	})
 }
 
-func (ds *CSVFileDatasource) queryLocalCsv(refId string, csvDesc *csv.FileDescriptor) *datasource.QueryResult {
+func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.DatasourceModel) (string, error) {
+	downloadedFile, err := sftp.GetFile(sftp.ConnectionConfig{
+		Host:          dsModel.SftpHost,
+		Port:          dsModel.SftpPort,
+		User:          dsModel.SftpUser,
+		Password:      dsModel.SftpPassword,
+		Timeout:       time.Second * 30,
+		IgnoreHostKey: dsModel.SftpIgnoreHostKey,
+	}, file, dsModel.SftpWorkingDir)
+	if err != nil {
+		ds.logError(fmt.Sprintf("Could not download CSV data file: %s", err.Error()))
+		return "", err
+	}
+	return downloadedFile, nil
+}
+
+func (ds *CSVFileDatasource) queryLocalCsv(queryModel *model.QueryModel, csvDesc *csv.FileDescriptor) *datasource.QueryResult {
+	ds.debugf("Going to query data from `%s`", csvDesc.Filename)
 	if err := util.CheckFile(csvDesc.Filename); err != nil {
 		ds.logError(fmt.Sprintf("Could not read data file `%s`: %s", csvDesc.Filename, err.Error()))
-		return &datasource.QueryResult{
-			Error: fmt.Sprintf("Could not read data file `%s`", csvDesc.Filename),
-			RefId: refId,
-		}
+		return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("Could not read data file `%s`", csvDesc.Filename))
 	}
 
 	csvFile, err := csv.Read(csvDesc)
 	if err != nil {
 		ds.logError(fmt.Sprintf("Failed to read data file `%s`: %s", csvDesc.Filename, err.Error()))
-		return &datasource.QueryResult{
-			Error: fmt.Sprintf("Failed to read data file `%s`", csvDesc.Filename),
-			RefId: refId,
+		return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("Failed to read data file `%s`", csvDesc.Filename))
+	}
+	ds.debugf("Table=%s", csvFile.String())
+
+
+	if len(queryModel.Query) > 0 {
+		ds.debugf("Apply query `%s`", queryModel.Query)
+		csvFile, err = csvFile.Filter(queryModel.Query)
+		if err != nil {
+			ds.logError(fmt.Sprintf("Filtering is failed: %s. expr=`%s`", err.Error(), queryModel.Query))
+			return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("%s", err.Error()))
 		}
 	}
+
+	ds.debugf("Rows count=%d", csvFile.RowsCount())
 
 	table := ds.toTable(csvFile)
 
 	return &datasource.QueryResult{
-		RefId: refId,
+		RefId: queryModel.RefID,
 		Tables: []*datasource.Table{table},
 	}
 }
@@ -160,10 +180,31 @@ func (ds *CSVFileDatasource) toTable(csvTable *csv.Table) *datasource.Table {
 			Values: make([]*datasource.RowValue, 0),
 		}
 		for _, value := range row {
-			tableRow.Values = append(tableRow.Values, &datasource.RowValue{
-				Kind:        datasource.RowValue_TYPE_STRING,
-				StringValue: value,
-			})
+			switch typedValue := value.(type) {
+			case int64:
+				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
+					Kind:		datasource.RowValue_TYPE_INT64,
+					Int64Value:	typedValue,
+				})
+				break
+			case float64:
+				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
+					Kind:		datasource.RowValue_TYPE_DOUBLE,
+					DoubleValue:	typedValue,
+				})
+				break
+			case string:
+				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
+					Kind:        datasource.RowValue_TYPE_STRING,
+					StringValue: typedValue,
+				})
+				break
+			case nil:
+				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
+					Kind: datasource.RowValue_TYPE_NULL,
+				})
+				break
+			}
 		}
 		table.Rows = append(table.Rows, tableRow)
 	}
@@ -177,6 +218,13 @@ func (ds *CSVFileDatasource) resultWithError(result *datasource.DatasourceRespon
 		RefId: "A",
 		Error: errorMessage,
 	})
+}
+
+func (ds *CSVFileDatasource) errQueryResult(refId string, message string) *datasource.QueryResult {
+	return &datasource.QueryResult{
+		Error: message,
+		RefId: refId,
+	}
 }
 
 func (ds *CSVFileDatasource) logRequest(req *datasource.DatasourceRequest) {
@@ -211,4 +259,8 @@ func (ds *CSVFileDatasource) logError(msg string) {
 	logContext := map[string]interface{}{}
 	logContext["version"] = Version
 	ds.MainLogger.Error(msg, util.MapToArray(logContext))
+}
+
+func (ds *CSVFileDatasource) debugf(msg string, args ...interface{}) {
+	ds.MainLogger.Debug(fmt.Sprintf(msg, args...))
 }

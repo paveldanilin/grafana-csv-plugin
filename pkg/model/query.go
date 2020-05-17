@@ -3,35 +3,25 @@ package model
 import (
 	"encoding/json"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 )
 
 type QueryModel struct {
-	RefID string
-	Format string
-	ColumnSort string
-	CustomColumnOrder []string
+	RefID	string	`json:"refId,omitempty"`
+	Format	string	`json:"format"`
+	Query	string	`json:"query"`
 }
 
 func CreateQueryFrom(query datasource.Query) (*QueryModel, error) {
-	inputModel := make(map[string]interface{})
-	err := json.Unmarshal([]byte(query.ModelJson), &inputModel)
+	model := &QueryModel{}
+	err := json.Unmarshal([]byte(query.ModelJson), &model)
 	if err != nil {
 		return nil, err
 	}
-
-	tmpCustomColumnOrder := inputModel["customColumnOrder"].([]interface{})
-	customColumnOrder := make([]string, 0)
-	for _, v := range tmpCustomColumnOrder {
-		customColumnOrder = append(customColumnOrder, v.(string))
-	}
-
-	model := &QueryModel{
-		RefID:             query.RefId,
-		Format:            util.GetStr("format", inputModel, ""),
-		ColumnSort:        util.GetStr("columnSort", inputModel, ""),
-		CustomColumnOrder: customColumnOrder,
-	}
-
+	model.RefID = query.RefId
 	return model, nil
+}
+
+func (m *QueryModel) String() string {
+	jsonBytes, _ := json.Marshal(m)
+	return string(jsonBytes)
 }

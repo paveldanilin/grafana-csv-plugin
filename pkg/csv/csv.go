@@ -23,7 +23,6 @@ func Read(descriptor *FileDescriptor) (*Table, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer file.Close()
 
 	csvReader := csv.NewReader(file)
@@ -37,22 +36,16 @@ func Read(descriptor *FileDescriptor) (*Table, error) {
 		return nil, err
 	}
 
-	csvFile := &Table{
-		Columns: make([]string, 0),
-		Rows:    make([][]string, 0),
-	}
-
+	csvFile := NewTable()
 	if len(records) == 0 {
 		return csvFile, nil
 	}
 
-	// Build Columns
-	headers := records[0]
-	for _, headerName := range headers {
-		csvFile.Columns = append(csvFile.Columns, headerName)
-	}
+	csvFile.AddColumns(records[0]...)
 
-	csvFile.Rows = records[1:]
+	for i := 1 ; i < len(records); i++ {
+		csvFile.AddRow(records[i]...)
+	}
 
 	return csvFile, nil
 }

@@ -21,8 +21,7 @@ export default class FileDatasource {
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        columnSort: target.columnSort || 'ASC',
-        customColumnOrder: target.customColumnOrder || [],
+        query: target.query,
       };
     });
 
@@ -60,8 +59,7 @@ export default class FileDatasource {
             maxDataPoints: 1,
             datasourceId: this.id,
             format: 'table',
-            columnSort: 'ASC',
-            customColumnOrder: [],
+            query: '',
           }
         ]
       }
@@ -87,8 +85,7 @@ export default class FileDatasource {
       refId: refId,
       datasourceId: this.id,
       format: 'table',
-      columnSort: 'ASC',
-      customColumnOrder: [],
+      query: '',
     };
 
     const range = this.timeSrv.timeRange();

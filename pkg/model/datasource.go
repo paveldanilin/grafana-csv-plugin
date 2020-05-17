@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 )
 
 const (
@@ -14,59 +13,42 @@ const (
 )
 
 type DatasourceModel struct {
-	ID             int64
-	OrgID          int64
-	Name           string
-	Type           string
+	ID			int64	`json:"id,omitempty"`
+	OrgID			int64	`json:"orgId,omitempty"`
+	Name			string	`json:"name,omitempty"`
+	Type			string	`json:"type:omitempty"`
 
-	Filename string
+	Filename		string	`json:"filename"`
 
 	// CSV options
-	CsvDelimiter string
-	CsvComment string
-	CsvTrimLeadingSpace bool
+	CsvDelimiter		string	`json:"csvDelimiter"`
+	CsvComment		string	`json:"csvComment"`
+	CsvTrimLeadingSpace	bool	`json:"csvTrimLeadingSpace"`
 
 	// Access mode: local, sftp
-	AccessMode string
+	AccessMode		string	`json:"accessMode"`
 
 	// SFTP
-	SftpHost string
-	SftpPort string
-	SftpUser string
-	SftpPassword string
-	SftpWorkingDir string // Local working dir
-	SftpIgnoreHostKey bool
+	SftpHost		string	`json:"sftpHost,omitempty"`
+	SftpPort		string	`json:"sftpPort,omitempty"`
+	SftpUser		string	`json:"sftUser,omitempty"`
+	SftpPassword		string	`json:"sftPassword,omitempty"`
+	SftpWorkingDir		string	`json:"sftpWorkingDir"`		// Local working dir
+	SftpIgnoreHostKey	bool	`json:"sftpIgnoreHostKey"`
 }
 
 func CreateDatasourceFrom(req datasource.DatasourceRequest) (*DatasourceModel, error) {
-	inputModel := make(map[string]interface{})
-	err := json.Unmarshal([]byte(req.Datasource.JsonData), &inputModel)
+	model := &DatasourceModel{}
+	err := json.Unmarshal([]byte(req.Datasource.JsonData), &model)
 	if err != nil {
 		return nil, err
 	}
 
-	model := &DatasourceModel{
-		ID:            		req.Datasource.Id,
-		OrgID:         		req.Datasource.OrgId,
-		Name:          		req.Datasource.Name,
-		Type:          		req.Datasource.Type,
-		// Access Mode
-		AccessMode: 		util.GetStr("accessMode", inputModel, "local"),
-		// CSV options
-		CsvDelimiter: 		util.GetStr("csvDelimiter", inputModel, ","),
-		CsvComment: 		util.GetStr("csvComment", inputModel, "#"),
-		CsvTrimLeadingSpace:	util.GetBool("csvTrimLeadingSpace", inputModel, true),
-
-		Filename: util.GetStr("filename", inputModel, ""),
-
-		// SFTP
-		SftpHost: 		util.GetStr("sftpHost", inputModel, ""),
-		SftpPort: 		util.GetStr("sftpPort", inputModel, ""),
-		SftpUser: 		util.GetStr("sftpUser", inputModel, ""),
-		SftpPassword:		req.Datasource.DecryptedSecureJsonData["sftpPassword"],
-		SftpWorkingDir:         util.GetStr("sftpWorkingDir", inputModel, ""),
-		SftpIgnoreHostKey:      util.GetBool("sftpIgnoreHostKey", inputModel, false),
-	}
+	model.ID = req.Datasource.Id
+	model.OrgID = req.Datasource.OrgId
+	model.Name = req.Datasource.Name
+	model.Type = req.Datasource.Type
+	model.SftpPassword = req.Datasource.DecryptedSecureJsonData["sftpPassword"]
 
 	if len(model.CsvDelimiter) == 0 {
 		model.CsvDelimiter = ","
@@ -83,6 +65,11 @@ func CreateDatasourceFrom(req datasource.DatasourceRequest) (*DatasourceModel, e
 	}
 
   	return model, validateDatasourceModel(model)
+}
+
+func (m *DatasourceModel) String() string {
+	jsonBytes, _ := json.Marshal(m)
+	return string(jsonBytes)
 }
 
 func validateDatasourceModel(model *DatasourceModel) error {
