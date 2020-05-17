@@ -7,7 +7,8 @@
   "private": true,
   "homepage": "https://github.com/paveldanilin",
   "scripts": {
-    "build": "npm install && grunt"
+    "build": "npm install && grunt",
+    "test": "go test ./tests -v"
   },
   "author": {
     "name": "Pavel Danilin",
