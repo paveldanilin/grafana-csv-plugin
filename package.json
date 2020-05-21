@@ -4,7 +4,6 @@
   "description": "Grafana datasource for reading data from the CSV files",
   "main": "index.js",
   "license": "MIT",
-  "private": true,
   "homepage": "https://github.com/paveldanilin",
   "scripts": {
     "build": "npm install && grunt",
