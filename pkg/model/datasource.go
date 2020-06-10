@@ -35,6 +35,11 @@ type DatasourceModel struct {
 	SftpPassword		string	`json:"sftPassword,omitempty"`
 	SftpWorkingDir		string	`json:"sftpWorkingDir"`		// Local working dir
 	SftpIgnoreHostKey	bool	`json:"sftpIgnoreHostKey"`
+
+	Columns			[]struct {
+		Name	string	`json:"name"`
+		Type	string	`json:"type"`
+	} `json:"columns"`
 }
 
 func CreateDatasourceFrom(req datasource.DatasourceRequest) (*DatasourceModel, error) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Deprecated
 type Table struct {
 	Columns []string
 	Rows    [][]interface{}

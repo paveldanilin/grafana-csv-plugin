@@ -12,12 +12,14 @@ import (
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/sftp"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 	"golang.org/x/net/context"
+	"strings"
 	"time"
 )
 
 type CSVFileDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	MainLogger hclog.Logger
+	Tables     map[string]*csv.Table2
 }
 
 func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -106,13 +108,53 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryM
 		csvFilename = downloadedFile
 	}
 
-	return ds.queryLocalCsv(queryModel, &csv.FileDescriptor{
+	tableColumns := make([]csv.Column, 0)
+	for _, dsColumn := range dsModel.Columns {
+		tableColumns = append(tableColumns, csv.Column{
+			Type: csv.ColumnTypeFromString(dsColumn.Type),
+			Name: dsColumn.Name,
+		})
+	}
+
+	csvTable, err := ds.prepareCsv(dsModel.Name, &csv.FileDescriptor{
 		Filename:         csvFilename,
 		Delimiter:        rune(dsModel.CsvDelimiter[0]),
 		Comment:          rune(dsModel.CsvComment[0]),
 		TrimLeadingSpace: dsModel.CsvTrimLeadingSpace,
 		FieldsPerRecord:  0, // Implies that each row contains the same count of fields as the header row
+		Columns: tableColumns,
 	})
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Could not parse CSV data file: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
+
+	query := strings.TrimSpace(queryModel.Query)
+	if len(query) == 0 {
+		query = fmt.Sprintf("SELECT * FROM %s LIMIT 15", csv.TableName)
+	}
+
+	columns, rows, err := csvTable.Query(query)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
+
+	if queryModel.Format == "time_series" {
+		return &datasource.QueryResult{
+			RefId: queryModel.RefID,
+			Series: []*datasource.TimeSeries{ds.toTimeSeries(rows)},
+		}
+	}
+
+	return &datasource.QueryResult{
+		RefId: queryModel.RefID,
+		Tables: []*datasource.Table{ds.toTable2(columns, rows)},
+	}
 }
 
 func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.DatasourceModel) (string, error) {
@@ -131,6 +173,77 @@ func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.Datasourc
 	return downloadedFile, nil
 }
 
+func (ds *CSVFileDatasource) prepareCsv(dsName string, csvDesc *csv.FileDescriptor) (*csv.Table2, error) {
+	// TODO: check is file has been changed
+	if _, ok := ds.Tables[dsName]; ok {
+		return ds.Tables[dsName], nil
+	}
+	t, err := csv.Read2(csvDesc)
+	if err != nil {
+		return nil, err
+	}
+	ds.Tables[dsName] = t
+	return ds.Tables[dsName], nil
+}
+
+func (ds *CSVFileDatasource) toTable2(columns []string, rows [][]interface{}) *datasource.Table {
+	table := &datasource.Table{
+		Columns: []*datasource.TableColumn{},
+		Rows: make([]*datasource.TableRow, 0),
+	}
+
+	// -- Columns
+	for _, columnName := range columns {
+		table.Columns = append(table.Columns, &datasource.TableColumn{Name: columnName})
+	}
+
+	// -- Rows
+	for _, row := range rows {
+		table.Rows = append(table.Rows, &datasource.TableRow{
+			Values: ds.normalizeRow(row),
+		})
+	}
+
+	return table
+}
+
+func (ds *CSVFileDatasource) toTimeSeries(rows [][]interface{}) *datasource.TimeSeries {
+	return nil
+}
+
+func (ds *CSVFileDatasource) normalizeRow(row []interface{}) []*datasource.RowValue {
+	normalized := make([]*datasource.RowValue, 0)
+	for _, value := range row {
+		switch typedValue := value.(type) {
+		case int64:
+			normalized = append(normalized, &datasource.RowValue{
+				Kind:		datasource.RowValue_TYPE_INT64,
+				Int64Value:	typedValue,
+			})
+			break
+		case float64:
+			normalized = append(normalized, &datasource.RowValue{
+				Kind:		datasource.RowValue_TYPE_DOUBLE,
+				DoubleValue:	typedValue,
+			})
+			break
+		case string:
+			normalized = append(normalized, &datasource.RowValue{
+				Kind:        datasource.RowValue_TYPE_STRING,
+				StringValue: typedValue,
+			})
+			break
+		case nil:
+			normalized = append(normalized, &datasource.RowValue{
+				Kind: datasource.RowValue_TYPE_NULL,
+			})
+			break
+		}
+	}
+	return normalized
+}
+
+// Deprecated
 func (ds *CSVFileDatasource) queryLocalCsv(queryModel *model.QueryModel, csvDesc *csv.FileDescriptor) *datasource.QueryResult {
 	ds.debugf("Going to query data from `%s`", csvDesc.Filename)
 	if err := util.CheckFile(csvDesc.Filename); err != nil {
@@ -165,6 +278,7 @@ func (ds *CSVFileDatasource) queryLocalCsv(queryModel *model.QueryModel, csvDesc
 	}
 }
 
+// Deprecated
 func (ds *CSVFileDatasource) toTable(csvTable *csv.Table) *datasource.Table {
 	table := &datasource.Table{
 		Columns: []*datasource.TableColumn{},

@@ -12,8 +12,11 @@ type FileDescriptor struct {
 	Comment rune
 	TrimLeadingSpace bool
 	FieldsPerRecord int
+	// User defined or auto detected info about columns
+	Columns []Column
 }
 
+// Deprecated
 func Read(descriptor *FileDescriptor) (*Table, error) {
 	if descriptor == nil {
 		return nil, errors.New("file descriptor is missed")
@@ -48,4 +51,32 @@ func Read(descriptor *FileDescriptor) (*Table, error) {
 	}
 
 	return csvFile, nil
+}
+
+func Read2(descriptor *FileDescriptor) (*Table2, error) {
+	if descriptor == nil {
+		return nil, errors.New("file descriptor is missed")
+	}
+
+	file, err := os.Open(descriptor.Filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	csvReader := csv.NewReader(file)
+	csvReader.Comma = descriptor.Delimiter
+	csvReader.Comment = descriptor.Comment
+	csvReader.TrimLeadingSpace = descriptor.TrimLeadingSpace
+	csvReader.FieldsPerRecord = descriptor.FieldsPerRecord
+
+	db, err := ToDb(csvReader, descriptor)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Table2{
+		db: db,
+		columns: descriptor.Columns,
+	}, nil
 }
