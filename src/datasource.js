@@ -21,7 +21,7 @@ export default class FileDatasource {
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        query: target.query,
+        query: target.query || 'SELECT * FROM DataTable LIMIT 1, 15',
       };
     });
 

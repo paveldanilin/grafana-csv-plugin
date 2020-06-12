@@ -11,20 +11,14 @@
 >
 > To make it work you should make configuration as described in [documentation](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
 
-#### Features:
+#### Features
 - Read local CSV file
-- Read remote CSV file by SFTP
-- Filter data (thanks to a great [expr library](https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md))
+- Read CSV file via SFTP
+- SQL queries (under the hood CSV will be converted to in-memory SQLite3 DB)
 
 ###### Simple table
 
 ![](./doc/image/grid.png)
-
-###### With filtering expression
-
-![](./doc/image/expr.png)
-
-![](./doc/image/expr1.png)
 
 #### Config
 - Read local file

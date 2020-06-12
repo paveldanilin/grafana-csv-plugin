@@ -7,7 +7,7 @@ export default class FileDatasourceQueryCtrl extends QueryCtrl {
     super($scope, $injector);
 
     this.target.alias = '';
-    this.target.query = this.target.query || '';
+    this.target.query = this.target.query || 'SELECT * FROM DataTable LIMIT 1, 15';
 
     // FORMAT
     this.target.format = this.target.format || 'table';

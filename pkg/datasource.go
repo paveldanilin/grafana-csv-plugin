@@ -12,9 +12,19 @@ import (
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/sftp"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 	"golang.org/x/net/context"
+	"io"
 	"strings"
+	"sync"
 	"time"
 )
+
+type csvDs struct {
+	table *csv.Table2
+	// we should lock table during reading phase
+	mux sync.Mutex
+	fileSize int64
+	modTime time.Time
+}
 
 type CSVFileDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
@@ -136,24 +146,33 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryM
 		query = fmt.Sprintf("SELECT * FROM %s LIMIT 15", csv.TableName)
 	}
 
-	columns, rows, err := csvTable.Query(query)
+	result, err := csvTable.Query2(query)
 	if err != nil {
 		return &datasource.QueryResult{
 			Error: fmt.Sprintf("Query failed: %s", err.Error()),
 			RefId: queryModel.RefID,
 		}
 	}
+	defer result.Release()
 
 	if queryModel.Format == "time_series" {
 		return &datasource.QueryResult{
 			RefId: queryModel.RefID,
-			Series: []*datasource.TimeSeries{ds.toTimeSeries(rows)},
+			Series: []*datasource.TimeSeries{ds.toTimeSeries(result)},
 		}
 	}
 
+	// Convert to table
+	table, err := ds.toTable2(result)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
 	return &datasource.QueryResult{
 		RefId: queryModel.RefID,
-		Tables: []*datasource.Table{ds.toTable2(columns, rows)},
+		Tables: []*datasource.Table{table},
 	}
 }
 
@@ -186,28 +205,41 @@ func (ds *CSVFileDatasource) prepareCsv(dsName string, csvDesc *csv.FileDescript
 	return ds.Tables[dsName], nil
 }
 
-func (ds *CSVFileDatasource) toTable2(columns []string, rows [][]interface{}) *datasource.Table {
+func (ds *CSVFileDatasource) toTable2(result *csv.QueryResult) (*datasource.Table, error) {
 	table := &datasource.Table{
 		Columns: []*datasource.TableColumn{},
 		Rows: make([]*datasource.TableRow, 0),
 	}
 
 	// -- Columns
+	columns, err := result.Columns()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, columnName := range columns {
 		table.Columns = append(table.Columns, &datasource.TableColumn{Name: columnName})
 	}
 
 	// -- Rows
-	for _, row := range rows {
+	for {
+		row, err := result.Next()
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+		if err == io.EOF {
+			break
+		}
+
 		table.Rows = append(table.Rows, &datasource.TableRow{
 			Values: ds.normalizeRow(row),
 		})
 	}
 
-	return table
+	return table, nil
 }
 
-func (ds *CSVFileDatasource) toTimeSeries(rows [][]interface{}) *datasource.TimeSeries {
+func (ds *CSVFileDatasource) toTimeSeries(result *csv.QueryResult) *datasource.TimeSeries {
 	return nil
 }
 
@@ -215,6 +247,12 @@ func (ds *CSVFileDatasource) normalizeRow(row []interface{}) []*datasource.RowVa
 	normalized := make([]*datasource.RowValue, 0)
 	for _, value := range row {
 		switch typedValue := value.(type) {
+		case time.Time:
+			normalized = append(normalized, &datasource.RowValue{
+				Kind:		datasource.RowValue_TYPE_INT64,
+				Int64Value:	typedValue.UnixNano() / int64(time.Millisecond),
+			})
+			break
 		case int64:
 			normalized = append(normalized, &datasource.RowValue{
 				Kind:		datasource.RowValue_TYPE_INT64,

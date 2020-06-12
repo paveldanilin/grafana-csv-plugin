@@ -49,10 +49,12 @@ func ToDb(reader *csv.Reader, descriptor *FileDescriptor) (*sql.DB, error) {
 	}
 
 	// Create DB
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxIdleConns(100)
+	db.SetConnMaxLifetime(0)
 
 	// Create table
 	sqlCreateTable := createTableFor(descriptor.Columns)
