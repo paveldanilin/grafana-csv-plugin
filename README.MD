@@ -16,6 +16,20 @@
 - Read CSV file via SFTP
 - SQL queries (under the hood CSV will be converted to in-memory SQLite3 DB)
 
+
+#### Query
+- [SQLite3](https://www.sqlite.org/index.html)
+- Data from CSV are loaded into `DataTable` table per each Datasource
+
+#### Build graphs
+- data/SacramentocrimeJanuary2006.csv
+```sql
+SELECT strftime('%Y-%m-%d', cdatetime) as "time", district as "metric", count(*) as "value"
+FROM DataTable
+GROUP BY strftime('%Y-%m-%d', cdatetime), district
+ORDER BY cdatetime
+```
+
 ###### Simple table
 
 ![](./doc/image/grid.png)

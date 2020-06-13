@@ -1,7 +1,7 @@
 {
   "name": "grafana-csv-plugin",
-  "version": "1.0.0",
-  "description": "Grafana datasource for reading data from the CSV files",
+  "version": "2.0.0",
+  "description": "Grafana CSV datasource",
   "main": "index.js",
   "license": "MIT",
   "homepage": "https://github.com/paveldanilin",

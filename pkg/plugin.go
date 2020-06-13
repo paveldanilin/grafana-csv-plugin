@@ -4,14 +4,13 @@ import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 )
 
 const (
 	WelcomeMessage = "CSV plugin has been started"
 	ExitMessage    = "CSV plugin has been stopped"
 	Name           = "grafana_csv_plugin"
-	Version        = "1.0.0"
+	Version        = "2.0.0"
 )
 
 func main() {
@@ -35,7 +34,6 @@ func main() {
 		Plugins: map[string]plugin.Plugin{
 		      Name: &datasource.DatasourcePluginImpl{Plugin: &CSVFileDatasource{
 		      		MainLogger: logger,
-				Tables:     make(map[string]*csv.Table2),
 		      }},
 		},
 
