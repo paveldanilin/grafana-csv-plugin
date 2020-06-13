@@ -14,7 +14,7 @@
 #### Features
 - Read local CSV file
 - Read CSV file via SFTP
-- SQL queries (under the hood CSV will be converted to in-memory SQLite3 DB)
+- SQL queries (under the hood CSV will be converted into in-memory SQLite3 DB)
 
 
 #### Query
