@@ -21,7 +21,12 @@ type FileDescriptor struct {
 	Columns []Column
 }
 
-func Read(descriptor *FileDescriptor) (*DB, error) {
+type reader struct {
+	file *os.File
+	csv  *csv.Reader
+}
+
+func newCsvReader(descriptor *FileDescriptor) (*reader, error) {
 	if descriptor == nil {
 		return nil, errors.New("file descriptor is missed")
 	}
@@ -37,7 +42,6 @@ func Read(descriptor *FileDescriptor) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
 	csvReader := csv.NewReader(file)
 	csvReader.Comma = descriptor.Delimiter
@@ -45,13 +49,14 @@ func Read(descriptor *FileDescriptor) (*DB, error) {
 	csvReader.TrimLeadingSpace = descriptor.TrimLeadingSpace
 	csvReader.FieldsPerRecord = descriptor.FieldsPerRecord
 
-	db, err := toSqlite(TableName, csvReader, descriptor)
-	if err != nil {
-		return nil, err
-	}
-
-	return &DB{
-		db: db,
-		columns: descriptor.Columns,
+	return &reader{
+		file: file,
+		csv:  csvReader,
 	}, nil
+}
+
+func (r *reader) close() {
+	r.file.Close()
+	r.file = nil
+	r.csv = nil
 }

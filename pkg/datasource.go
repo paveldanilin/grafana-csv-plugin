@@ -19,7 +19,7 @@ import (
 type CSVFileDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	MainLogger hclog.Logger
-	CsvDbManager csv.DbManager
+	Db csv.DB
 }
 
 func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -116,7 +116,7 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel 
 		})
 	}
 
-	csvDb, err := ds.CsvDbManager.Get(dsModel.Name, &csv.FileDescriptor{
+	err := ds.Db.LoadCSV(dsModel.Name, &csv.FileDescriptor{
 		Filename:         csvFilename,
 		Delimiter:        rune(dsModel.CsvDelimiter[0]),
 		Comment:          rune(dsModel.CsvComment[0]),
@@ -126,12 +126,12 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel 
 	})
 	if err != nil {
 		return &datasource.QueryResult{
-			Error: fmt.Sprintf("Could not parse CSV: %s", err.Error()),
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
 			RefId: queryModel.RefID,
 		}
 	}
 
-	result, err := csvDb.Query(queryModel.Query)
+	result, err := ds.Db.Query(queryModel.Query)
 	if err != nil {
 		return &datasource.QueryResult{
 			Error: fmt.Sprintf("Query failed: %s", err.Error()),
@@ -140,18 +140,18 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel 
 	}
 	defer result.Release()
 
-	return ds.toGrafanaResult(result, queryModel)
+	return ds.toGfResult(result, queryModel)
 }
 
-func (ds *CSVFileDatasource) toGrafanaResult(result *csv.QueryResult, queryModel *model.Query) *datasource.QueryResult {
+func (ds *CSVFileDatasource) toGfResult(result *csv.QueryResult, queryModel *model.Query) *datasource.QueryResult {
 	if queryModel.Format == "time_series" {
-		return ds.toGrafanaTimeseries(queryModel.RefID, result)
+		return ds.toGfTimeSeries(queryModel.RefID, result)
 	}
-	return ds.toGrafanaTable(queryModel.RefID, result)
+	return ds.toGfTable(queryModel.RefID, result)
 }
 
-func (ds *CSVFileDatasource) toGrafanaTimeseries(refId string, result *csv.QueryResult) *datasource.QueryResult {
-	timeseries, err := grafana.ToTimeSeries(result)
+func (ds *CSVFileDatasource) toGfTimeSeries(refId string, result *csv.QueryResult) *datasource.QueryResult {
+	timeSeries, err := grafana.ToTimeSeries(result)
 	if err != nil {
 		return &datasource.QueryResult{
 			Error: fmt.Sprintf("Query failed: %s", err.Error()),
@@ -162,7 +162,7 @@ func (ds *CSVFileDatasource) toGrafanaTimeseries(refId string, result *csv.Query
 		RefId: refId,
 		Series: []*datasource.TimeSeries{},
 	}
-	for seriesName, seriesPoints := range timeseries {
+	for seriesName, seriesPoints := range timeSeries {
 		queryResult.Series = append(queryResult.Series, &datasource.TimeSeries{
 			Name:   seriesName,
 			Points: seriesPoints,
@@ -171,7 +171,7 @@ func (ds *CSVFileDatasource) toGrafanaTimeseries(refId string, result *csv.Query
 	return queryResult
 }
 
-func (ds *CSVFileDatasource) toGrafanaTable(refId string, result *csv.QueryResult) *datasource.QueryResult {
+func (ds *CSVFileDatasource) toGfTable(refId string, result *csv.QueryResult) *datasource.QueryResult {
 	table, err := grafana.ToTable(result)
 	if err != nil {
 		return &datasource.QueryResult{
@@ -200,11 +200,6 @@ func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.Datasourc
 	}
 	return downloadedFile, nil
 }
-
-func (ds *CSVFileDatasource) toTimeSeries(result *csv.QueryResult) *datasource.TimeSeries {
-	return nil
-}
-
 
 func (ds *CSVFileDatasource) resultWithError(result *datasource.DatasourceResponse, errorMessage string) {
 	result.Results = make([]*datasource.QueryResult, 0)
