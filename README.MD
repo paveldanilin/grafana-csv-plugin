@@ -32,6 +32,8 @@ GROUP BY strftime('%Y-%m-%d', cdatetime), district
 ORDER BY cdatetime
 ```
 
+![](./doc/image/graph.png)
+
 ###### Simple table
 
 ![](./doc/image/grid.png)
