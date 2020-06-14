@@ -19,13 +19,15 @@
 
 #### Query
 - [SQLite3](https://www.sqlite.org/index.html)
-- Data from CSV are loaded into `DataTable` table per each Datasource
+- Each DS has its own table, the name of the table coincide with the DS name (for example the DS name is `my_data`, hence in query you should select from `my_data` table)
 
 #### Build graphs
-- data/SacramentocrimeJanuary2006.csv
+- CSV File: data/SacramentocrimeJanuary2006.csv
+- DS name jan_2006
+
 ```sql
 SELECT strftime('%Y-%m-%d', cdatetime) as "time", district as "metric", count(*) as "value"
-FROM DataTable
+FROM jan_2006
 GROUP BY strftime('%Y-%m-%d', cdatetime), district
 ORDER BY cdatetime
 ```
