@@ -16,11 +16,10 @@ import (
 	"time"
 )
 
-var csvDbManager = csv.NewDbManager()
-
 type CSVFileDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	MainLogger hclog.Logger
+	CsvDbManager csv.DbManager
 }
 
 func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -117,7 +116,7 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel 
 		})
 	}
 
-	csvDb, err := csvDbManager.Get(dsModel.Name, &csv.FileDescriptor{
+	csvDb, err := ds.CsvDbManager.Get(dsModel.Name, &csv.FileDescriptor{
 		Filename:         csvFilename,
 		Delimiter:        rune(dsModel.CsvDelimiter[0]),
 		Comment:          rune(dsModel.CsvComment[0]),

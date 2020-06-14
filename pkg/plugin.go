@@ -4,6 +4,7 @@ import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 )
 
 const (
@@ -34,6 +35,7 @@ func main() {
 		Plugins: map[string]plugin.Plugin{
 		      Name: &datasource.DatasourcePluginImpl{Plugin: &CSVFileDatasource{
 		      		MainLogger: logger,
+		      		CsvDbManager: csv.NewDbManager(logger),
 		      }},
 		},
 
