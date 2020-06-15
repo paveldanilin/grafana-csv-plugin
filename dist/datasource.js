@@ -60,7 +60,7 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
                 maxDataPoints: options.maxDataPoints,
                 datasourceId: _this.id,
                 format: target.format,
-                query: target.query || 'SELECT * FROM DataTable LIMIT 1, 15'
+                query: target.query || _this.defaultSql()
               };
             });
 
@@ -143,6 +143,12 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
             }).then(function (data) {
               return _this2.responseParser.parseMetricFindQueryResult(refId, data);
             });
+          }
+        }, {
+          key: 'defaultSql',
+          value: function defaultSql() {
+            var defSql = 'SELECT * FROM {TableName} LIMIT 1, 15';
+            return defSql.replace('{TableName}', this.name);
           }
         }]);
 

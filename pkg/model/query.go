@@ -2,9 +2,7 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
-	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 	"strings"
 )
 
@@ -22,11 +20,7 @@ func CreateQueryFrom(query datasource.Query) (*Query, error) {
 	}
 	model.RefID = query.RefId
 
-
 	model.Query = strings.TrimSpace(model.Query)
-	if len(model.Query) == 0 {
-		model.Query = fmt.Sprintf("SELECT * FROM %s LIMIT 1, 15", csv.TableName)
-	}
 
 	return model, nil
 }

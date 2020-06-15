@@ -69,7 +69,7 @@ System.register(['lodash', 'app/plugins/sdk', '@grafana/data'], function (_expor
           var _this = _possibleConstructorReturn(this, (FileDatasourceQueryCtrl.__proto__ || Object.getPrototypeOf(FileDatasourceQueryCtrl)).call(this, $scope, $injector));
 
           _this.target.alias = '';
-          _this.target.query = _this.target.query || 'SELECT * FROM DataTable LIMIT 1, 15';
+          _this.target.query = _this.target.query || _this.defaultSql();
 
           // FORMAT
           _this.target.format = _this.target.format || 'table';
@@ -81,6 +81,12 @@ System.register(['lodash', 'app/plugins/sdk', '@grafana/data'], function (_expor
         }
 
         _createClass(FileDatasourceQueryCtrl, [{
+          key: 'defaultSql',
+          value: function defaultSql() {
+            var defSql = 'SELECT * FROM {TableName} LIMIT 1, 15';
+            return defSql.replace('{TableName}', this.datasource.name);
+          }
+        }, {
           key: 'onDataReceived',
           value: function onDataReceived(dataList) {
             this.lastQueryMeta = null;

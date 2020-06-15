@@ -7,7 +7,7 @@ export default class FileDatasourceQueryCtrl extends QueryCtrl {
     super($scope, $injector);
 
     this.target.alias = '';
-    this.target.query = this.target.query || 'SELECT * FROM DataTable LIMIT 1, 15';
+    this.target.query = this.target.query || this.defaultSql();
 
     // FORMAT
     this.target.format = this.target.format || 'table';
@@ -18,6 +18,11 @@ export default class FileDatasourceQueryCtrl extends QueryCtrl {
 
     this.panelCtrl.events.on(PanelEvents.dataReceived, this.onDataReceived.bind(this), $scope);
     this.panelCtrl.events.on(PanelEvents.dataError, this.onDataError.bind(this), $scope);
+  }
+
+  defaultSql() {
+    const defSql = 'SELECT * FROM {TableName} LIMIT 1, 15';
+    return defSql.replace('{TableName}', this.datasource.name);
   }
 
   onDataReceived(dataList) {

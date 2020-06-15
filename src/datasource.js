@@ -21,7 +21,7 @@ export default class FileDatasource {
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        query: target.query || 'SELECT * FROM DataTable LIMIT 1, 15',
+        query: target.query || this.defaultSql(),
       };
     });
 
@@ -101,5 +101,10 @@ export default class FileDatasource {
         data: data,
       })
       .then((data) => this.responseParser.parseMetricFindQueryResult(refId, data));
+  }
+
+  defaultSql() {
+    const defSql = 'SELECT * FROM {TableName} LIMIT 1, 15';
+    return defSql.replace('{TableName}', this.name);
   }
 }
