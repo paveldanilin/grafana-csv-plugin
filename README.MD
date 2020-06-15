@@ -9,7 +9,7 @@
 >
 > `lvl=eror msg=“Failed to load plugin” logger=plugins error=“plugin “grafana-csv-plugin” is unsigned”`
 >
-> To make it work you should make configuration as described in [documentation](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
+> To get it to work you should make configuration as described in [documentation](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
 
 #### Features
 - Read local CSV file
@@ -19,11 +19,11 @@
 
 #### Query
 - [SQLite3](https://www.sqlite.org/index.html)
-- Each DS has its own table, the name of the table coincide with the DS name (for example the DS name is `my_data`, hence in query you should select from `my_data` table)
+- Each DS has its own table, the name of the table coincides with the DS name (for example the DS name is `my_data`, hence in a query you should select from `my_data` table)
 
 #### Build graphs
 - CSV File: data/SacramentocrimeJanuary2006.csv
-- DS name jan_2006
+- DS name `jan_2006`
 
 ```sql
 SELECT strftime('%Y-%m-%d', cdatetime) as "time", district as "metric", count(*) as "value"
@@ -52,6 +52,9 @@ ORDER BY cdatetime
 
 #### Test
 - npm test
+
+#### Prev version
+- [1.1.0](https://github.com/paveldanilin/grafana-csv-plugin/tree/1.1.0) which doesn't support SQL, but supports the filtering expressions.
 
 
 ###### Example data set: /data
