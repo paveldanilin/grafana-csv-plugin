@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
+	"time"
 )
 
 func MapToArray(m map[string]interface{}) []interface{} {
@@ -37,4 +39,38 @@ func IsNumber(str string) bool {
 func IsInt(str string) bool {
 	_, err := strconv.ParseInt(str, 10, 64)
 	return err == nil
+}
+
+func FileChanged(filename string, oldSize int64, oldModTime time.Time) (bool, error) {
+	fileStat, err := os.Stat(filename)
+	if err != nil {
+		return false, err
+	}
+	return fileStat.Size() != oldSize || fileStat.ModTime() != oldModTime, nil
+}
+
+func TimeToEpochMs(t time.Time) int64 {
+	return t.UnixNano() / int64(time.Millisecond) // 1000000
+}
+
+func ToFloat64(v interface{}) (float64, error) {
+	if v == nil {
+		return float64(0), nil
+	}
+
+	switch i := v.(type) {
+	case string:
+		return strconv.ParseFloat(i, 64)
+	case float64:
+		return i, nil
+	case float32:
+		return float64(i), nil
+	case int64:
+		return float64(i), nil
+	case int:
+		return float64(i), nil
+	case int32:
+		return float64(i), nil
+	}
+	return float64(0), errors.New(fmt.Sprintf("Could not convert value `%v`.(%s) => float64", v, reflect.TypeOf(v).String()))
 }

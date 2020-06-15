@@ -4,24 +4,33 @@ import (
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 )
 
 const (
 	WelcomeMessage = "CSV plugin has been started"
 	ExitMessage    = "CSV plugin has been stopped"
 	Name           = "grafana_csv_plugin"
-	Version        = "1.0.0"
+	Version        = "2.0.0"
 )
 
 func main() {
-  	// Grafana logger
+  	// GF logger
 	var logger = hclog.New(&hclog.LoggerOptions{
 		Name:  Name,
 		Level: hclog.Trace,
 	})
-
-	// Welcome -> grafana log
 	logger.Info(WelcomeMessage, "version", Version)
+
+	csvDb, err := csv.NewDB(100, 0, logger)
+	if err != nil {
+		logger.Error("Could not create CSV database", "error", err.Error())
+		return
+	}
+	if err := csvDb.Init(); err != nil {
+		logger.Error("Could not init CSV database", "error", err.Error())
+		return
+	}
 
 	// Start plugin
 	plugin.Serve(&plugin.ServeConfig{
@@ -33,7 +42,8 @@ func main() {
 
 		Plugins: map[string]plugin.Plugin{
 		      Name: &datasource.DatasourcePluginImpl{Plugin: &CSVFileDatasource{
-			MainLogger: logger,
+		      		MainLogger: logger,
+		      		Db: csvDb,
 		      }},
 		},
 

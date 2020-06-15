@@ -12,7 +12,7 @@ const (
 	AccessMode_SFTP  = "sftp"
 )
 
-type DatasourceModel struct {
+type Datasource struct {
 	ID			int64	`json:"id,omitempty"`
 	OrgID			int64	`json:"orgId,omitempty"`
 	Name			string	`json:"name,omitempty"`
@@ -35,10 +35,15 @@ type DatasourceModel struct {
 	SftpPassword		string	`json:"sftPassword,omitempty"`
 	SftpWorkingDir		string	`json:"sftpWorkingDir"`		// Local working dir
 	SftpIgnoreHostKey	bool	`json:"sftpIgnoreHostKey"`
+
+	Columns			[]struct {
+		Name	string	`json:"name"`
+		Type	string	`json:"type"`
+	} `json:"columns"`
 }
 
-func CreateDatasourceFrom(req datasource.DatasourceRequest) (*DatasourceModel, error) {
-	model := &DatasourceModel{}
+func CreateDatasourceFrom(req datasource.DatasourceRequest) (*Datasource, error) {
+	model := &Datasource{}
 	err := json.Unmarshal([]byte(req.Datasource.JsonData), &model)
 	if err != nil {
 		return nil, err
@@ -67,12 +72,12 @@ func CreateDatasourceFrom(req datasource.DatasourceRequest) (*DatasourceModel, e
   	return model, validateDatasourceModel(model)
 }
 
-func (m *DatasourceModel) String() string {
+func (m *Datasource) String() string {
 	jsonBytes, _ := json.Marshal(m)
 	return string(jsonBytes)
 }
 
-func validateDatasourceModel(model *DatasourceModel) error {
+func validateDatasourceModel(model *Datasource) error {
 	if model.AccessMode == AccessMode_LOCAL {
 		return validateLocalDatasourceModel(model)
 	}
@@ -82,14 +87,14 @@ func validateDatasourceModel(model *DatasourceModel) error {
 	return errors.New(fmt.Sprintf("unknown access mode `%s`", model.AccessMode))
 }
 
-func validateLocalDatasourceModel(model *DatasourceModel) error {
+func validateLocalDatasourceModel(model *Datasource) error {
 	if len(model.Filename) == 0 {
 		return errors.New("the path to the CSV file is not defined")
 	}
 	return nil
 }
 
-func validateSftpDatasourceModel(model *DatasourceModel) error {
+func validateSftpDatasourceModel(model *Datasource) error {
 	if len(model.Filename) == 0 {
 		return errors.New("the path to the CSV file is not defined")
 	}

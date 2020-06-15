@@ -43,6 +43,9 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
           this.current.jsonData.encrypt = 'true';
 
           this.accessModes = [{ text: 'Local', value: 'local' }, { text: 'SFTP', value: 'sftp' }];
+
+          this.columnTypes = [{ text: 'Text', value: 'text' }, { text: 'Integer', value: 'integer' }, { text: 'Real', value: 'real' }, { text: 'Timestamp', value: 'timestamp' }, { text: 'Date', value: 'date' }];
+
           if (!this.current.jsonData.accessMode) {
             this.current.jsonData.accessMode = 'local';
           }
@@ -81,6 +84,10 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
             this.current.secureJsonData.sftpPassword = null;
           }
 
+          if (!this.current.jsonData.columns) {
+            this.current.jsonData.columns = [];
+          }
+
           this.onPasswordReset = function (event) {
             event.preventDefault();
             _this.current['sftpPassword'] = null;
@@ -104,6 +111,20 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
           key: 'onSftpHostUpdate',
           value: function onSftpHostUpdate() {
             this.current.url = this.current.jsonData.sftpHost + '>' + this.current.jsonData.filename;
+          }
+        }, {
+          key: 'addColumn',
+          value: function addColumn(evt) {
+            evt.preventDefault();
+            this.current.jsonData.columns.push({
+              name: '',
+              type: 'text'
+            });
+          }
+        }, {
+          key: 'deleteColumn',
+          value: function deleteColumn(rowIndex) {
+            this.current.jsonData.columns.splice(rowIndex, 1);
           }
         }]);
 

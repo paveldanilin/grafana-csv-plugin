@@ -110,3 +110,51 @@
     </li>
   </ul>
 </section>
+
+<!--
+  ===============================================================================================================================
+  Columns
+  ===============================================================================================================================
+-->
+<section id="data-scheme" style="padding-top: 26px">
+  <h3 class="page-heading">Columns</h3>
+
+  <div class="page-action-bar">
+    <div class="page-action-bar__spacer">
+    </div>
+
+    <button ng-click="ctrl.addColumn($event)" class="btn btn-primary">
+      Add Column
+    </button>
+  </div>
+
+  <table class="filter-table filter-table--hover">
+    <thead>
+    <th>Name</th>
+    <th>Type</th>
+    <th></th>
+    </thead>
+    <tbody>
+    <tr ng-repeat="col in ctrl.current.jsonData.columns track by $index">
+      <!-- COLUMN NAME -->
+      <td>
+        <input type="text"
+               class="gf-form-input"
+               ng-model='col.name'
+               placeholder="MyColumn">
+      </td>
+      <!-- COLUMN TYPE -->
+      <td>
+        <div class="gf-form-select-wrapper">
+          <select class="gf-form-input" ng-model="col.type" ng-options="f.value as f.text for f in ctrl.columnTypes"></select>
+        </div>
+      </td>
+      <td class="next-right">
+        <a ng-click="ctrl.deleteColumn($index)" class="btn btn-danger btn-small">
+          <i class="fa fa-remove"></i>
+        </a>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</section>

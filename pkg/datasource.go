@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/grafana"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/model"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/sftp"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
@@ -18,6 +19,7 @@ import (
 type CSVFileDatasource struct {
 	plugin.NetRPCUnsupportedPlugin
 	MainLogger hclog.Logger
+	Db csv.DB
 }
 
 func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -39,7 +41,7 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		ds.resultWithError(result, errMsg)
 		return result, nil
 	}
-	ds.debugf("DatasourceModel=%s", dsModel.String())
+	ds.debugf("Datasource=%s", dsModel.String())
 
 	queryModel, err := model.CreateQueryFrom(*req.Queries[0])
 	if err != nil {
@@ -48,7 +50,7 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		ds.resultWithError(result, errMsg)
 		return result, nil
 	}
-	ds.debugf("QueryModel=%s", queryModel.String())
+	ds.debugf("Query=%s", queryModel.String())
 
 	// RefId is hardcoded in datasource.js
 	if queryModel.RefID == "[tests-connection]" {
@@ -65,7 +67,7 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 	return result, nil
 }
 
-func (ds *CSVFileDatasource) testConnection(dsModel *model.DatasourceModel) error {
+func (ds *CSVFileDatasource) testConnection(dsModel *model.Datasource) error {
 	if dsModel.AccessMode == model.AccessMode_LOCAL {
 		return ds.testConnectionLocal(dsModel)
 	}
@@ -75,11 +77,11 @@ func (ds *CSVFileDatasource) testConnection(dsModel *model.DatasourceModel) erro
 	return errors.New(fmt.Sprintf("unknown access mode `%s`", dsModel.AccessMode))
 }
 
-func (ds *CSVFileDatasource) testConnectionLocal(dsModel *model.DatasourceModel) error {
+func (ds *CSVFileDatasource) testConnectionLocal(dsModel *model.Datasource) error {
 	return util.CheckFile(dsModel.Filename)
 }
 
-func (ds *CSVFileDatasource) testConnectionSftp(dsModel *model.DatasourceModel) error {
+func (ds *CSVFileDatasource) testConnectionSftp(dsModel *model.Datasource) error {
 	return sftp.Test(sftp.ConnectionConfig{
 		Host:          dsModel.SftpHost,
 		Port:          dsModel.SftpPort,
@@ -90,7 +92,7 @@ func (ds *CSVFileDatasource) testConnectionSftp(dsModel *model.DatasourceModel) 
 	})
 }
 
-func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryModel *model.QueryModel) *datasource.QueryResult {
+func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel *model.Query) *datasource.QueryResult {
 	csvFilename := dsModel.Filename
 
 	if dsModel.AccessMode == model.AccessMode_SFTP {
@@ -106,16 +108,84 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.DatasourceModel, queryM
 		csvFilename = downloadedFile
 	}
 
-	return ds.queryLocalCsv(queryModel, &csv.FileDescriptor{
+	tableColumns := make([]csv.Column, 0)
+	for _, dsColumn := range dsModel.Columns {
+		tableColumns = append(tableColumns, csv.Column{
+			Type: csv.ColumnTypeFromString(dsColumn.Type),
+			Name: dsColumn.Name,
+		})
+	}
+
+	err := ds.Db.LoadCSV(dsModel.Name, &csv.FileDescriptor{
 		Filename:         csvFilename,
 		Delimiter:        rune(dsModel.CsvDelimiter[0]),
 		Comment:          rune(dsModel.CsvComment[0]),
 		TrimLeadingSpace: dsModel.CsvTrimLeadingSpace,
 		FieldsPerRecord:  0, // Implies that each row contains the same count of fields as the header row
+		Columns: tableColumns,
 	})
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
+
+	result, err := ds.Db.Query(queryModel.Query)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
+	defer result.Release()
+
+	return ds.toGfResult(result, queryModel)
 }
 
-func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.DatasourceModel) (string, error) {
+func (ds *CSVFileDatasource) toGfResult(result *csv.QueryResult, queryModel *model.Query) *datasource.QueryResult {
+	if queryModel.Format == "time_series" {
+		return ds.toGfTimeSeries(queryModel.RefID, result)
+	}
+	return ds.toGfTable(queryModel.RefID, result)
+}
+
+func (ds *CSVFileDatasource) toGfTimeSeries(refId string, result *csv.QueryResult) *datasource.QueryResult {
+	timeSeries, err := grafana.ToTimeSeries(result)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: refId,
+		}
+	}
+	queryResult := &datasource.QueryResult{
+		RefId: refId,
+		Series: []*datasource.TimeSeries{},
+	}
+	for seriesName, seriesPoints := range timeSeries {
+		queryResult.Series = append(queryResult.Series, &datasource.TimeSeries{
+			Name:   seriesName,
+			Points: seriesPoints,
+		})
+	}
+	return queryResult
+}
+
+func (ds *CSVFileDatasource) toGfTable(refId string, result *csv.QueryResult) *datasource.QueryResult {
+	table, err := grafana.ToTable(result)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: refId,
+		}
+	}
+	return &datasource.QueryResult{
+		RefId: refId,
+		Tables: []*datasource.Table{table},
+	}
+}
+
+func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.Datasource) (string, error) {
 	downloadedFile, err := sftp.GetFile(sftp.ConnectionConfig{
 		Host:          dsModel.SftpHost,
 		Port:          dsModel.SftpPort,
@@ -129,87 +199,6 @@ func (ds *CSVFileDatasource) getRemoteFile(file string, dsModel *model.Datasourc
 		return "", err
 	}
 	return downloadedFile, nil
-}
-
-func (ds *CSVFileDatasource) queryLocalCsv(queryModel *model.QueryModel, csvDesc *csv.FileDescriptor) *datasource.QueryResult {
-	ds.debugf("Going to query data from `%s`", csvDesc.Filename)
-	if err := util.CheckFile(csvDesc.Filename); err != nil {
-		ds.logError(fmt.Sprintf("Could not read data file `%s`: %s", csvDesc.Filename, err.Error()))
-		return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("Could not read data file `%s`", csvDesc.Filename))
-	}
-
-	csvFile, err := csv.Read(csvDesc)
-	if err != nil {
-		ds.logError(fmt.Sprintf("Failed to read data file `%s`: %s", csvDesc.Filename, err.Error()))
-		return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("Failed to read data file `%s`", csvDesc.Filename))
-	}
-	ds.debugf("Table=%s", csvFile.String())
-
-
-	if len(queryModel.Query) > 0 {
-		ds.debugf("Apply query `%s`", queryModel.Query)
-		csvFile, err = csvFile.Filter(queryModel.Query)
-		if err != nil {
-			ds.logError(fmt.Sprintf("Filtering is failed: %s. expr=`%s`", err.Error(), queryModel.Query))
-			return ds.errQueryResult(queryModel.RefID, fmt.Sprintf("%s", err.Error()))
-		}
-	}
-
-	ds.debugf("Rows count=%d", csvFile.RowsCount())
-
-	table := ds.toTable(csvFile)
-
-	return &datasource.QueryResult{
-		RefId: queryModel.RefID,
-		Tables: []*datasource.Table{table},
-	}
-}
-
-func (ds *CSVFileDatasource) toTable(csvTable *csv.Table) *datasource.Table {
-	table := &datasource.Table{
-		Columns: []*datasource.TableColumn{},
-		Rows:    make([]*datasource.TableRow, 0),
-	}
-
-	for _, columnName := range csvTable.Columns {
-		table.Columns = append(table.Columns, &datasource.TableColumn{Name: columnName})
-	}
-
-	for _, row := range csvTable.Rows {
-		tableRow := &datasource.TableRow{
-			Values: make([]*datasource.RowValue, 0),
-		}
-		for _, value := range row {
-			switch typedValue := value.(type) {
-			case int64:
-				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
-					Kind:		datasource.RowValue_TYPE_INT64,
-					Int64Value:	typedValue,
-				})
-				break
-			case float64:
-				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
-					Kind:		datasource.RowValue_TYPE_DOUBLE,
-					DoubleValue:	typedValue,
-				})
-				break
-			case string:
-				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
-					Kind:        datasource.RowValue_TYPE_STRING,
-					StringValue: typedValue,
-				})
-				break
-			case nil:
-				tableRow.Values = append(tableRow.Values, &datasource.RowValue{
-					Kind: datasource.RowValue_TYPE_NULL,
-				})
-				break
-			}
-		}
-		table.Rows = append(table.Rows, tableRow)
-	}
-
-	return table
 }
 
 func (ds *CSVFileDatasource) resultWithError(result *datasource.DatasourceResponse, errorMessage string) {
