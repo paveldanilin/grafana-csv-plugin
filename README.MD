@@ -15,9 +15,10 @@
 - Read local CSV file
 - Read CSV file via SFTP
 - SQL queries (under the hood CSV will be converted into in-memory SQLite3 DB)
-- Auto-detect column types by the first row of CSV
+- Auto-detect column types by the first data row of CSV
 
-####
+#### CSV format
+- Each CSV file must have the first row with column names
 
 #### Query
 - [SQLite3](https://www.sqlite.org/index.html)
