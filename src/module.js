@@ -74,14 +74,6 @@ class FileConfigCtrl {
     };
   }
 
-  onFilenameUpdate() {
-    this.current.url = this.current.jsonData.filename;
-  }
-
-  onSftpHostUpdate() {
-    this.current.url = this.current.jsonData.sftpHost + '>' + this.current.jsonData.filename;
-  }
-
   addColumn(evt) {
     evt.preventDefault();
     this.current.jsonData.columns.push({

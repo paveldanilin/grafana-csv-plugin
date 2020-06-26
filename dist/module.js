@@ -103,16 +103,6 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
         }
 
         _createClass(FileConfigCtrl, [{
-          key: 'onFilenameUpdate',
-          value: function onFilenameUpdate() {
-            this.current.url = this.current.jsonData.filename;
-          }
-        }, {
-          key: 'onSftpHostUpdate',
-          value: function onSftpHostUpdate() {
-            this.current.url = this.current.jsonData.sftpHost + '>' + this.current.jsonData.filename;
-          }
-        }, {
           key: 'addColumn',
           value: function addColumn(evt) {
             evt.preventDefault();
