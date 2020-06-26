@@ -42,7 +42,6 @@
     <input type="text"
            class="gf-form-input width-30"
            ng-model='ctrl.current.jsonData.filename'
-           ng-change="ctrl.onFilenameUpdate()"
            placeholder="/usr/local/csv/data.csv">
   </div>
 </section>
@@ -57,7 +56,6 @@
       <input type="text"
              class="gf-form-input width-30"
              ng-model='ctrl.current.jsonData.filename'
-             ng-change="ctrl.onFilenameUpdate()"
              placeholder="/csv/data.csv">
     </li>
     <li class="gf-form gf-form-inline">
@@ -73,7 +71,6 @@
       <input type="text"
              class="gf-form-input width-10"
              ng-model='ctrl.current.jsonData.sftpHost'
-             ng-change="ctrl.onSftpHostUpdate()"
              placeholder="sft-host">
 
       <span class="gf-form-label width-4">Port</span>
