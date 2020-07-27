@@ -51,7 +51,7 @@ func (sqlite *DbSqlite) Query(sql string) (*QueryResult, error) {
 }
 
 func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) error {
-	sqlite.logger.Info("Loading CSV into table", "table", tableName, "filename", descriptor.Filename)
+	sqlite.logger.Info("Loading CSV", "table", tableName, "filename", descriptor.Filename)
 
 	var metaCsv *model.Meta
 	reload := false
@@ -63,19 +63,19 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 	if tableExists {
 		metaCsv = sqlite.getMetaCsv(tableName)
 		if metaCsv == nil {
-			sqlite.logger.Debug("Table already exists, meta=nil", "table", tableName)
+			sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "meta", "nil", "reload", false)
 			return nil
 		}
 
 		fSize, fModTime := util.FileStat(descriptor.Filename)
 		if fSize == metaCsv.FileSize && fModTime == metaCsv.FileModTime {
 			// the file is not changed
-			sqlite.logger.Debug("Table already exists, the file is not changed", "table", tableName)
+			sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "changed", false, "reload", false)
 			return nil
 		}
 
 		// The file is changed, we should reload it
-		sqlite.logger.Debug("Table already exists, the file is changed. Going to reload", "table", tableName)
+		sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "changed", true, "reload", true)
 		reload = true
 		metaCsv.FileSize = fSize
 		metaCsv.FileModTime = fModTime
@@ -83,7 +83,7 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 
 	reader, err := newCsvReader(descriptor)
 	if err != nil {
-		sqlite.logger.Debug("Failed to create CSV csv", "error", err.Error(), "filename", descriptor.Filename)
+		sqlite.logger.Debug("Failed to create CSV reader", "error", err.Error(), "filename", descriptor.Filename)
 		return err
 	}
 	defer reader.close()
@@ -160,7 +160,7 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 	}
 	defer stmt.Close()
 
-	sqlite.logger.Debug("Start data inserting...", "table", tableName)
+	sqlite.logger.Debug("Begin inserting", "table", tableName, "filename", descriptor.Filename)
 	insertedCount := 1
 
 	// Insert the first row
@@ -191,7 +191,7 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		insertedCount++
 	}
 
-	sqlite.logger.Debug("Stop data inserting", "table", tableName, "inserted", insertedCount)
+	sqlite.logger.Debug("Stop inserting", "table", tableName, "inserted", insertedCount, "filename", descriptor.Filename)
 
 	return nil
 }
