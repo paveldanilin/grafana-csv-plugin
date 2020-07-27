@@ -3,16 +3,14 @@ package csv
 import (
 	"encoding/csv"
 	"errors"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 	"os"
-	"time"
 )
-
-const TableName = "DataTable"
 
 type FileDescriptor struct {
 	Filename string
 	fileSize int64
-	fileModTime time.Time
+	fileModTime int64
 	Delimiter rune
 	Comment rune
 	TrimLeadingSpace bool
@@ -31,12 +29,7 @@ func newCsvReader(descriptor *FileDescriptor) (*reader, error) {
 		return nil, errors.New("file descriptor is missed")
 	}
 
-	fileStat, err := os.Stat(descriptor.Filename)
-	if err != nil {
-		return nil, err
-	}
-	descriptor.fileSize = fileStat.Size()
-	descriptor.fileModTime = fileStat.ModTime()
+	descriptor.fileSize, descriptor.fileModTime = util.FileStat(descriptor.Filename)
 
 	file, err := os.Open(descriptor.Filename)
 	if err != nil {

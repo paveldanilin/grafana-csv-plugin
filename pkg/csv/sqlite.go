@@ -6,6 +6,7 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/hashicorp/go-hclog"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/model"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 	"io"
 	"strconv"
@@ -17,6 +18,8 @@ type DbSqlite struct {
 	db *sql.DB
 	logger hclog.Logger
 }
+
+const metaCsvTable = "_meta_csv_"
 
 // If maxIdleCons <= 0, no idle connections are retained
 // If connMaxLifetime <= 0, connections are reused forever.
@@ -33,9 +36,8 @@ func NewDB(maxIdleCons int, connMaxLifetime time.Duration, logger hclog.Logger) 
 }
 
 func (sqlite *DbSqlite) Init() error {
-	// TODO: create tables for storing info about loaded CSV files
 	sqlite.logger.Debug("Init CSV DB")
-	return nil
+	return sqlite.createMetaCsvTable()
 }
 
 func (sqlite *DbSqlite) Query(sql string) (*QueryResult, error) {
@@ -49,25 +51,53 @@ func (sqlite *DbSqlite) Query(sql string) (*QueryResult, error) {
 }
 
 func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) error {
-	sqlite.logger.Info("Loading CSV into table", "table", tableName, "filename", descriptor.Filename)
+	sqlite.logger.Info("Loading CSV", "table", tableName, "filename", descriptor.Filename)
 
+	var metaCsv *model.Meta
+	reload := false
 	tableExists, err := sqlite.ifTableExists(tableName)
 	if err != nil {
 		return err
 	}
 
 	if tableExists {
-		sqlite.logger.Debug("Table already exists", "table", tableName)
-		// already loaded
-		return nil
+		metaCsv = sqlite.getMetaCsv(tableName)
+		if metaCsv == nil {
+			sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "meta", "nil", "reload", false)
+			return nil
+		}
+
+		fSize, fModTime := util.FileStat(descriptor.Filename)
+		if fSize == metaCsv.FileSize && fModTime == metaCsv.FileModTime {
+			// the file is not changed
+			sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "changed", false, "reload", false)
+			return nil
+		}
+
+		// The file is changed, we should reload it
+		sqlite.logger.Debug("CSV already loaded", "table", tableName, "filename", descriptor.Filename, "changed", true, "reload", true)
+		reload = true
+		metaCsv.FileSize = fSize
+		metaCsv.FileModTime = fModTime
 	}
 
 	reader, err := newCsvReader(descriptor)
 	if err != nil {
-		sqlite.logger.Debug("Failed to create CSV csv", "error", err.Error(), "filename", descriptor.Filename)
+		sqlite.logger.Debug("Failed to create CSV reader", "error", err.Error(), "filename", descriptor.Filename)
 		return err
 	}
 	defer reader.close()
+
+	if reload {
+		_ = sqlite.updateMetaCsv(metaCsv)
+	} else {
+		_ = sqlite.createMetaCsv(&model.Meta{
+			TableName:   tableName,
+			FileName:    descriptor.Filename,
+			FileSize:    descriptor.fileSize,
+			FileModTime: descriptor.fileModTime,
+		})
+	}
 
 	// NewRead header
 	// TODO: we should somehow handle the situation when there is no header line
@@ -112,9 +142,14 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		}
 	}
 
-	// Create table for DS
-	if err := sqlite.exec(createTableFor(tableName, descriptor.Columns)); err != nil {
-		return err
+	if reload {
+		if err := sqlite.exec(fmt.Sprintf("DELETE FROM %s", tableName)); err != nil {
+			return err
+		}
+	} else {
+		if err := sqlite.exec(createTableFor(tableName, descriptor.Columns)); err != nil {
+			return err
+		}
 	}
 
 	// Prepare INSERT statement
@@ -124,6 +159,9 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		return err
 	}
 	defer stmt.Close()
+
+	sqlite.logger.Debug("Begin inserting", "table", tableName, "filename", descriptor.Filename)
+	insertedCount := 1
 
 	// Insert the first row
 	rowValues := valuesToRow(firstRow, descriptor.Columns, columnsMap)
@@ -149,7 +187,11 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		if err != nil {
 			return err
 		}
+
+		insertedCount++
 	}
+
+	sqlite.logger.Debug("Stop inserting", "table", tableName, "inserted", insertedCount, "filename", descriptor.Filename)
 
 	return nil
 }
@@ -165,7 +207,7 @@ func (sqlite *DbSqlite) exec(sql string) error {
 }
 
 func (sqlite *DbSqlite) ifTableExists(tableName string) (bool, error) {
-	rows, err := sqlite.db.Query(fmt.Sprintf("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", tableName))
+	rows, err := sqlite.db.Query(fmt.Sprintf("SELECT name FROM sqlite_master WHERE type='table' AND name='%s' LIMIT 1", tableName))
 	if err != nil {
 		sqlite.logger.Error("Failed to check existence of table", "table", tableName, "error", err.Error())
 		return false, err
@@ -179,9 +221,95 @@ func (sqlite *DbSqlite) ifTableExists(tableName string) (bool, error) {
 		}
 		count++
 	}
-	sqlite.logger.Debug("Tables count", "count", count)
+	sqlite.logger.Debug("Table count", "count", count, "table", tableName)
 
 	return count > 0, nil
+}
+
+func (sqlite *DbSqlite) createMetaCsvTable() error {
+	metaColumns := make([]Column, 0)
+	metaColumns = append(metaColumns, Column{
+		Type: "TEXT",
+		Name: "table_name",
+	})
+	metaColumns = append(metaColumns, Column{
+		Type: "TEXT",
+		Name: "file_name",
+	})
+	metaColumns = append(metaColumns, Column{
+		Type: "INTEGER",
+		Name: "file_size",
+	})
+	metaColumns = append(metaColumns, Column{
+		Type: "INTEGER",
+		Name: "file_mod_time",
+	})
+	if err := sqlite.exec(createTableFor(metaCsvTable, metaColumns)); err != nil {
+		return err
+	}
+	return nil
+}
+
+// TODO: move to Repository
+func (sqlite *DbSqlite) getMetaCsv(tableName string) *model.Meta {
+	rows, err := sqlite.db.Query(
+		fmt.Sprintf(
+			"SELECT file_name, file_size, file_mod_time FROM %s WHERE table_name='%s' LIMIT 1",
+			metaCsvTable,
+			tableName,
+		),
+	)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var fileName string
+		var fileSize int64
+		var fileModTime int64
+
+		err := rows.Scan(&fileName, &fileSize, &fileModTime)
+		if err != nil {
+			return nil
+		}
+
+		return &model.Meta{
+			TableName:   tableName,
+			FileName:    fileName,
+			FileSize:    fileSize,
+			FileModTime: fileModTime,
+		}
+	}
+
+	return nil
+}
+
+// TODO: move to Repository
+func (sqlite *DbSqlite) updateMetaCsv(meta *model.Meta) error {
+	return sqlite.exec(
+		fmt.Sprintf(
+			"UPDATE %s SET file_size=%d, file_mod_time=%d WHERE table_name='%s'",
+			metaCsvTable,
+			meta.FileSize,
+			meta.FileModTime,
+			meta.TableName,
+		),
+	)
+}
+
+// TODO: move to Repository
+func (sqlite *DbSqlite) createMetaCsv(meta *model.Meta) error {
+	return sqlite.exec(
+		fmt.Sprintf(
+			"INSERT INTO %s VALUES('%s', '%s', %d, %d)",
+			metaCsvTable,
+			meta.TableName,
+			meta.FileName,
+			meta.FileSize,
+			meta.FileModTime,
+		),
+	)
 }
 
 func createTableFor(tableName string, columns []Column) string {

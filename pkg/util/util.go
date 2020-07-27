@@ -41,12 +41,18 @@ func IsInt(str string) bool {
 	return err == nil
 }
 
-func FileChanged(filename string, oldSize int64, oldModTime time.Time) (bool, error) {
+func FileChanged(filename string, oldSize, oldModTime int64) bool {
+	curSize, curModTime := FileStat(filename)
+	return curSize != oldSize || curModTime != oldModTime
+}
+
+// Returns fileSize, fileModTime
+func FileStat(filename string) (int64, int64) {
 	fileStat, err := os.Stat(filename)
 	if err != nil {
-		return false, err
+		return 0, 0
 	}
-	return fileStat.Size() != oldSize || fileStat.ModTime() != oldModTime, nil
+	return fileStat.Size(), fileStat.ModTime().Unix()
 }
 
 func TimeToEpochMs(t time.Time) int64 {

@@ -46,47 +46,19 @@ System.register(['./datasource', './query_ctrl'], function (_export, _context) {
 
           this.columnTypes = [{ text: 'Text', value: 'text' }, { text: 'Integer', value: 'integer' }, { text: 'Real', value: 'real' }, { text: 'Timestamp', value: 'timestamp' }, { text: 'Date', value: 'date' }];
 
-          if (!this.current.jsonData.accessMode) {
-            this.current.jsonData.accessMode = 'local';
-          }
-
-          if (!this.current.jsonData.filename) {
-            this.current.jsonData.filename = '';
-          }
-          if (!this.current.jsonData.csvDelimiter) {
-            this.current.jsonData.csvDelimiter = '';
-          }
-          if (!this.current.jsonData.csvComment) {
-            this.current.jsonData.csvComment = '';
-          }
-          if (!this.current.jsonData.csvTrimLeadingSpace) {
-            this.current.jsonData.csvTrimLeadingSpace = true;
-          }
-
-          if (!this.current.jsonData.sftpHost) {
-            this.current.jsonData.sftpHost = '';
-          }
-          if (!this.current.jsonData.sftpPort) {
-            this.current.jsonData.sftpPort = '';
-          }
-          if (!this.current.jsonData.sftpUser) {
-            this.current.jsonData.sftpUser = '';
-          }
-          if (!this.current.jsonData.sftpIgnoreHostKey) {
-            this.current.jsonData.sftpIgnoreHostKey = false;
-          }
-          if (!this.current.jsonData.sftpWorkingDir) {
-            this.current.jsonData.sftpWorkingDir = '';
-          }
-
+          this.current.jsonData.accessMode = this.current.jsonData.accessMode || 'local';
+          this.current.jsonData.filename = this.current.jsonData.filename || '';
+          this.current.jsonData.csvDelimiter = this.current.jsonData.csvDelimiter || '';
+          this.current.jsonData.csvComment = this.current.jsonData.csvComment || '';
+          this.current.jsonData.csvTrimLeadingSpace = this.current.jsonData.csvTrimLeadingSpace || true;
+          this.current.jsonData.sftpHost = this.current.jsonData.sftpHost || '';
+          this.current.jsonData.sftpPort = this.current.jsonData.sftpPort || '';
+          this.current.jsonData.sftpUser = this.current.jsonData.sftpUser || '';
+          this.current.jsonData.sftpIgnoreHostKey = this.current.jsonData.sftpIgnoreHostKey || false;
+          this.current.jsonData.sftpWorkingDir = this.current.jsonData.sftpWorkingDir || '';
           this.current.secureJsonData = this.current.secureJsonData || {};
-          if (!this.current.secureJsonData.sftpPassword) {
-            this.current.secureJsonData.sftpPassword = null;
-          }
-
-          if (!this.current.jsonData.columns) {
-            this.current.jsonData.columns = [];
-          }
+          this.current.secureJsonData.sftpPassword = this.current.secureJsonData.sftpPassword || null;
+          this.current.jsonData.columns = this.current.jsonData.columns || [];
 
           this.onPasswordReset = function (event) {
             event.preventDefault();

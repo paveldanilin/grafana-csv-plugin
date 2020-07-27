@@ -2,9 +2,11 @@
 
 #### Install
 - Copy files from the `dist` folder to your [Grafana plugin directory](https://grafana.com/docs/grafana/latest/plugins/installation/#grafana-plugin-directory)
+- Ensure that executable file has the execute flag
 - Restart Grafana
 - Check datasource list as http://you-grafana/datasources/new
 
+##### Grafana 7.x.x
 > The plugin is unsigned, hence you may face the error:
 >
 > `lvl=eror msg=“Failed to load plugin” logger=plugins error=“plugin “grafana-csv-plugin” is unsigned”`
@@ -16,6 +18,7 @@
 - Read CSV file via SFTP
 - SQL queries (under the hood CSV will be converted into in-memory SQLite3 DB)
 - Auto-detect column types by the first data row
+- Reload a local file on changing
 
 #### CSV format
 - Each CSV file must have the first row with column names
