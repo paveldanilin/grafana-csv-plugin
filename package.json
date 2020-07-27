@@ -6,8 +6,7 @@
   "license": "MIT",
   "homepage": "https://github.com/paveldanilin",
   "scripts": {
-    "build": "npm install && grunt",
-    "test": "go test ./tests -v"
+    "build": "npm install && grunt"
   },
   "author": {
     "name": "Pavel Danilin",

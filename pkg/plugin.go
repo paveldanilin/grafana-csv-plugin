@@ -5,6 +5,8 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/macroproc"
 )
 
 const (
@@ -31,6 +33,8 @@ func main() {
 		logger.Error("Could not init CSV database", "error", err.Error())
 		return
 	}
+
+	macro.Register("timeFilter", macroproc.TimeFilter)
 
 	// Start plugin
 	plugin.Serve(&plugin.ServeConfig{

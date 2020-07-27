@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/araddon/dateparse"
 	"github.com/grafana/grafana-plugin-model/go/datasource"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/grafana"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/model"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/sftp"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
@@ -62,7 +64,16 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		return result, nil
 	}
 
-	result.Results = append(result.Results, ds.performQuery(dsModel, queryModel))
+	datetimeFrom, _ := dateparse.ParseAny(fmt.Sprintf("%d", req.TimeRange.FromEpochMs))
+	datetimeTo, _ := dateparse.ParseAny(fmt.Sprintf("%d", req.TimeRange.ToEpochMs))
+
+	queryScope := macro.NewScope()
+	queryScope.SetVar("timeToMs",	req.TimeRange.ToEpochMs)
+	queryScope.SetVar("timeFromMs",	req.TimeRange.FromEpochMs)
+	queryScope.SetVar("timeFrom",	datetimeFrom)
+	queryScope.SetVar("timeTo", 	datetimeTo)
+
+	result.Results = append(result.Results, ds.performQuery(dsModel, queryModel, queryScope))
 
 	return result, nil
 }
@@ -92,7 +103,7 @@ func (ds *CSVFileDatasource) testConnectionSftp(dsModel *model.Datasource) error
 	})
 }
 
-func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel *model.Query) *datasource.QueryResult {
+func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel *model.Query, scope *macro.Scope) *datasource.QueryResult {
 	csvFilename := dsModel.Filename
 
 	if dsModel.AccessMode == model.AccessMode_SFTP {
@@ -131,7 +142,15 @@ func (ds *CSVFileDatasource) performQuery(dsModel *model.Datasource, queryModel 
 		}
 	}
 
-	result, err := ds.Db.Query(queryModel.Query)
+	interpolatedQuery, err := macro.Interpolate(queryModel.Query, scope)
+	if err != nil {
+		return &datasource.QueryResult{
+			Error: fmt.Sprintf("Query failed: %s", err.Error()),
+			RefId: queryModel.RefID,
+		}
+	}
+
+	result, err := ds.Db.Query(interpolatedQuery)
 	if err != nil {
 		return &datasource.QueryResult{
 			Error: fmt.Sprintf("Query failed: %s", err.Error()),
