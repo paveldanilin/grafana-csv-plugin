@@ -32,7 +32,7 @@
 | Macros                             | Description                               |
 |------------------------------------|-------------------------------------------|
 | $__timeFilter(dateColumn)          | Will be replaced by a time range filter using the specified column name. For example, dateColumn BETWEEN ‘2017-04-21T05:01:17Z’ AND ‘2017-04-21T05:06:17Z’ |
-| $__timeGroup(dateColumn, interval) | Will be replaced by an expression usable in a GROUP BY clause. For example, datetime((strftime('%s', order_date) / 60) * 60, 'unixepoch') |
+| $__timeGroup(dateColumn, interval) | Will be replaced by an expression usable in a GROUP BY clause. For example, datetime((strftime('%s', dateColumn) / 60) * 60, 'unixepoch') |
 | $__unixEpochFrom()                 | Will be replaced by the start of the currently active time selection as Unix timestamp. For example, 1494410783 |
 | $__unixEpochTo()                   | Will be replaced by the end of the currently active time selection as Unix timestamp. For example, 1494497183 |
 
