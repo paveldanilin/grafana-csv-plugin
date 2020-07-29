@@ -42,6 +42,8 @@ Example:
 
 - CSV File: data/SacramentocrimeJanuary2006.csv
 - DS name `jan_2006`
+- group by 1 hour
+- filter by current time range
 
 ```sql
 SELECT $__timeGroup(cdatetime, 1h) as "time", district as "metric", count(*) as "value"
@@ -49,11 +51,28 @@ FROM
     jan_2006
 WHERE
     $__timeFilter(cdatetime)
-GROUP BY "time", district
+GROUP BY "time", "metric"
 ORDER BY "time"
 ```
 
 ![](./doc/image/graph.png)
+
+
+Example:
+
+- CSV File: data/SalesJan2009.csv
+- DS name `sales`
+- group by 24 hours
+
+```sql
+SELECT $__timeGroup(Transaction_date, 24h) as "time", Payment_Type as "metric", count(*) as "value"
+FROM
+sales
+GROUP BY "time", "metric"
+ORDER BY "time"
+```
+
+![](./doc/image/graph2.png)
 
 ###### Simple table
 
