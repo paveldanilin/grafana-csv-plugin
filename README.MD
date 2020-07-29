@@ -59,7 +59,7 @@ GROUP BY "time", "metric"
 ORDER BY "time"
 ```
 
-![](./doc/image/graph.png)
+![](doc/image/graph1.png)
 
 
 Example:
