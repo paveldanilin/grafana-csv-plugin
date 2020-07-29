@@ -6,7 +6,10 @@ import (
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/csv"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro"
-	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/macroproc"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/time_filter"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/time_group"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/unix_epoch_from"
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/macro/unix_epoch_to"
 )
 
 const (
@@ -34,7 +37,10 @@ func main() {
 		return
 	}
 
-	macro.Register("timeFilter", macroproc.TimeFilter)
+	macro.Register(time_filter.MacroName, time_filter.Processor)
+	macro.Register(unix_epoch_from.MacroName, unix_epoch_from.Processor)
+	macro.Register(unix_epoch_to.MacroName, unix_epoch_to.Processor)
+	macro.Register(time_group.MacroName, time_group.Processor)
 
 	// Start plugin
 	plugin.Serve(&plugin.ServeConfig{
