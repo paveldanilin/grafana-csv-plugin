@@ -9,7 +9,7 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-[{*.js, *.html}]
+[{*.js, *.html, *.sh}]
 indent_style = space
 indent_size = 2
 charset = utf-8
