@@ -2,7 +2,7 @@
 
 function docker_install()
 {
-  echo "Install docker..."
+  echo "MANAGE: Install docker..."
 
   yum update -y
   curl http://repo.net.billing.ru/scripts/add-docker-ce-repo.sh | sudo sh
@@ -11,34 +11,46 @@ function docker_install()
   yum install -y yum-utils device-mapper-persistent-data lvm2 python36 docker-ce docker-ce-cli containerd.io docker-compose wget
   systemctl start docker
   systemctl enable docker
+
+  echo "MANAGE: docker has been installed and started!"
 }
 
-function container_build_and_up()
+function container_build()
 {
-  echo "Build container and up..."
+  echo "MANAGE: Build \"grafana\" container..."
 
-  docker build --no-cache --tag=grafana .
-  docker run -d -p 3000:3000 --name=grafana grafana
+  docker rm grafana_csv-plugin
+  docker build --no-cache --tag=grafana:csv-plugin .
+}
+
+function container_up()
+{
+  echo "MANAGE: Up \"grafana\" container..."
+
+  docker run -d -p 3000:3000 --name=grafana_csv-plugin grafana:csv-plugin
 }
 
 function container_down()
 {
-  echo "Stop container..."
+  echo "MANAGE: Stop \"grafana\" container..."
 
-  docker stop grafana
+  docker stop grafana_csv-plugin
 }
 
 main()
 {
   cmd="$1"
   case $cmd in
-    up)
-      container_build_and_up
+    build)
+      container_build
       shift # past argument
     ;;
-    iup)
+    up)
+      container_up
+      shift # past argument
+    ;;
+    install)
       docker_install
-      container_build_and_up
       shift # past argument
     ;;
     down)

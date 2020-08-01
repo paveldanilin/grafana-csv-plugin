@@ -1,5 +1,5 @@
 FROM grafana/grafana:6.7.4-ubuntu
-USER root
+USER grafana
 
 # Copy plugin
 RUN mkdir /var/lib/grafana/plugins/grafana-csv-plugin
