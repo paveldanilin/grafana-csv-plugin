@@ -15,6 +15,11 @@ RUN mkdir /tmp/data
 COPY ./data /tmp/data
 RUN chown grafana:grafana /tmp/data/*.csv
 
+# Copy showcases
+RUN mkdir /tmp/showcase
+COPY ./showcase /tmp/showcase
+RUN chown grafana:grafana /tmp/showcase/*.json
+
 # Provisioning datasources + dashboards
 COPY ./provisioning/datasources /etc/grafana/provisioning/datasources
 COPY ./provisioning/dashboards /etc/grafana/provisioning/dashboards
