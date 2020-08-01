@@ -8,7 +8,7 @@ function docker_install()
   curl http://repo.net.billing.ru/scripts/add-docker-ce-repo.sh | sudo sh
 
   yum install -y epel-release
-  yum install -y yum-utils device-mapper-persistent-data lvm2 python36 docker-ce docker-ce-cli containerd.io docker-compose wget
+  yum install -y yum-utils device-mapper-persistent-data lvm2 python36 docker-ce docker-ce-cli containerd.io docker-compose
   systemctl start docker
   systemctl enable docker
 
