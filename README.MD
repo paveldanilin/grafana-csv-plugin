@@ -78,7 +78,7 @@ ORDER BY "time"
 
 ![](./doc/image/graph2.png)
 
-###### Simple table
+#### Simple table
 
 ![](./doc/image/grid.png)
 
@@ -94,8 +94,13 @@ ORDER BY "time"
 #### Build
 - npm run build
 
-#### Test
-- npm test
+#### Docker (Grafana 6.7.4)
+- `manage.sh build` (build docker image)
+- `manage.sh up` (run container)
+- `manage.sh down` (stop container)
+
+After starting container go to the showcase dashboard:
+http://your-host:3000/d/DTRcLsVGk/showcase-sales?orgId=1
 
 #### Prev version
 - [1.1.0](https://github.com/paveldanilin/grafana-csv-plugin/tree/1.1.0) which doesn't support SQL, but supports the filtering expressions.
