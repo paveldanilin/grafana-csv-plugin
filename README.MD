@@ -94,9 +94,6 @@ ORDER BY "time"
 #### Build
 - npm run build
 
-#### Test
-- npm test
-
 #### Prev version
 - [1.1.0](https://github.com/paveldanilin/grafana-csv-plugin/tree/1.1.0) which doesn't support SQL, but supports the filtering expressions.
 
