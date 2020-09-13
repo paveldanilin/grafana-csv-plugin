@@ -96,6 +96,9 @@ ORDER BY "time"
 - npm run build
 
 #### Docker (Grafana 6.7.4)
+
+http://your-server:3000 `(admin/admin)`
+
 - `manage.sh build` (build docker image)
 - `manage.sh up` (run container)
 - `manage.sh down` (stop container)
