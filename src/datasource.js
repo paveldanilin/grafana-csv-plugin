@@ -2,11 +2,13 @@ import _ from 'lodash';
 import ResponseParse from './response_parser';
 
 export default class FileDatasource {
-  constructor(instanceSettings, backendSrv, timeSrv) {
+  constructor(instanceSettings, backendSrv, timeSrv, templateSrv, variableSrv) {
     this.id = instanceSettings.id;
     this.name = instanceSettings.name;
     this.backendSrv = backendSrv;
     this.timeSrv = timeSrv;
+    this.templateSrv = templateSrv;
+    this.variableSrv = variableSrv;
     this.responseParser = new ResponseParse();
   }
 
@@ -21,7 +23,8 @@ export default class FileDatasource {
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        query: target.query || this.defaultSql(),
+        // query: target.query || this.defaultSql(),
+        query: this.templateSrv.replace(target.query, this.variableSrv.variables, this.interpolateVar),
       };
     });
 
@@ -43,6 +46,29 @@ export default class FileDatasource {
       },
       method: 'POST',
     }).then(this.responseParser.processQueryResult);
+  }
+
+  interpolateVar(value, variable) {
+    if (typeof value === 'string') {
+      if (variable.multi || variable.includeAll) {
+        return value.replace(/'/g, `''`);
+      } else {
+        return value;
+      }
+    }
+
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    const quotedValues = _.map(value, val => {
+      if (typeof value === 'number') {
+        return value;
+      }
+      return encodeURI(val.replace(/'/g, `''`));
+    });
+
+    return quotedValues.join(',');
   }
 
   testDatasource() {
