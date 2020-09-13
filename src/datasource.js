@@ -17,14 +17,14 @@ export default class FileDatasource {
     const queries = _.filter(options.targets, target => {
       return target.hide !== true;
     }).map(target => {
+      const rawQuery = target.query || this.defaultSql();
       return {
         refId: target.refId,
         intervalMs: options.intervalMs,
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        // query: target.query || this.defaultSql(),
-        query: this.templateSrv.replace(target.query, this.variableSrv.variables, this.interpolateVar),
+        query: this.templateSrv.replace(rawQuery, this.variableSrv.variables, this.interpolateVar),
       };
     });
 
@@ -103,15 +103,16 @@ export default class FileDatasource {
   }
 
   metricFindQuery(query, optionalOptions) {
-    let refId = 'mqtmp';
+    let refId = 'tempvar';
     if (optionalOptions && optionalOptions.variable && optionalOptions.variable.name) {
       refId = optionalOptions.variable.name;
     }
+
     const interpolatedQuery = {
       refId: refId,
       datasourceId: this.id,
+      query: this.templateSrv.replace(query, this.variableSrv.variables, this.interpolateVar),
       format: 'table',
-      query: '',
     };
 
     const range = this.timeSrv.timeRange();
@@ -122,11 +123,10 @@ export default class FileDatasource {
     };
 
     return this.backendSrv.datasourceRequest({
-        url: '/api/tsdb/query',
-        method: 'POST',
-        data: data,
-      })
-      .then((data) => this.responseParser.parseMetricFindQueryResult(refId, data));
+      url: '/api/tsdb/query',
+      method: 'POST',
+      data: data,
+    }).then((data) => this.responseParser.parseMetricFindQueryResult(refId, data));
   }
 
   defaultSql() {
