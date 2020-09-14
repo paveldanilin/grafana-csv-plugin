@@ -117,7 +117,7 @@ System.register(['lodash'], function (_export, _context) {
         }, {
           key: 'parseMetricFindQueryResult',
           value: function parseMetricFindQueryResult(refId, results) {
-            if (!results || results.data.length === 0 || results.data.results[refId].meta.rowCount === 0) {
+            if (!results) {
               return [];
             }
 

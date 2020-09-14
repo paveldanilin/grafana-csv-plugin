@@ -35,13 +35,15 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
       }();
 
       FileDatasource = function () {
-        function FileDatasource(instanceSettings, backendSrv, timeSrv) {
+        function FileDatasource(instanceSettings, backendSrv, timeSrv, templateSrv, variableSrv) {
           _classCallCheck(this, FileDatasource);
 
           this.id = instanceSettings.id;
           this.name = instanceSettings.name;
           this.backendSrv = backendSrv;
           this.timeSrv = timeSrv;
+          this.templateSrv = templateSrv;
+          this.variableSrv = variableSrv;
           this.responseParser = new ResponseParse();
         }
 
@@ -54,13 +56,14 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
             var queries = _.filter(options.targets, function (target) {
               return target.hide !== true;
             }).map(function (target) {
+              var rawQuery = target.query || _this.defaultSql();
               return {
                 refId: target.refId,
                 intervalMs: options.intervalMs,
                 maxDataPoints: options.maxDataPoints,
                 datasourceId: _this.id,
                 format: target.format,
-                query: target.query || _this.defaultSql()
+                query: _this.templateSrv.replace(rawQuery, _this.variableSrv.variables, _this.interpolateVar)
               };
             });
 
@@ -82,6 +85,30 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
               },
               method: 'POST'
             }).then(this.responseParser.processQueryResult);
+          }
+        }, {
+          key: 'interpolateVar',
+          value: function interpolateVar(value, variable) {
+            if (typeof value === 'string') {
+              if (variable.multi || variable.includeAll) {
+                return value.replace(/'/g, '\'\'');
+              } else {
+                return value;
+              }
+            }
+
+            if (typeof value === 'number') {
+              return value;
+            }
+
+            var quotedValues = _.map(value, function (val) {
+              if (typeof value === 'number') {
+                return value;
+              }
+              return encodeURI(val.replace(/'/g, '\'\''));
+            });
+
+            return quotedValues.join(',');
           }
         }, {
           key: 'testDatasource',
@@ -118,15 +145,16 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
           value: function metricFindQuery(query, optionalOptions) {
             var _this2 = this;
 
-            var refId = 'mqtmp';
+            var refId = 'tempvar';
             if (optionalOptions && optionalOptions.variable && optionalOptions.variable.name) {
               refId = optionalOptions.variable.name;
             }
+
             var interpolatedQuery = {
               refId: refId,
               datasourceId: this.id,
-              format: 'table',
-              query: ''
+              query: this.templateSrv.replace(query, this.variableSrv.variables, this.interpolateVar),
+              format: 'table'
             };
 
             var range = this.timeSrv.timeRange();

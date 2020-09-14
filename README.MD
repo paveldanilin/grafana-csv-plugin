@@ -18,6 +18,7 @@
 - SQL queries (under the hood CSV will be converted into in-memory SQLite3 DB)
 - Auto-detect column types by the first data row
 - Reloading CSV file on changing
+- Query [variables](https://grafana.com/docs/grafana/latest/variables/templates-and-variables/)
 - Macros:
   * $__timeFilter(dateColumn)
   * $__timeGroup(dateColumn, interval)
@@ -95,6 +96,9 @@ ORDER BY "time"
 - npm run build
 
 #### Docker (Grafana 6.7.4)
+
+http://your-server:3000 `(admin/admin)`
+
 - `manage.sh build` (build docker image)
 - `manage.sh up` (run container)
 - `manage.sh down` (stop container)

@@ -15,6 +15,7 @@ import (
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/sftp"
 	"github.com/paveldanilin/grafana-csv-plugin/pkg/util"
 	"golang.org/x/net/context"
+	"strings"
 	"time"
 )
 
@@ -53,6 +54,13 @@ func (ds *CSVFileDatasource) Query(ctx context.Context, req *datasource.Datasour
 		return result, nil
 	}
 	ds.debugf("Query=%s", queryModel.String())
+
+	if len(strings.TrimSpace(queryModel.Query)) == 0 {
+		ds.logWarning("Skip empty query")
+		return &datasource.DatasourceResponse{
+			Results: make([]*datasource.QueryResult, 0),
+		}, nil
+	}
 
 	// RefId is hardcoded in datasource.js
 	if queryModel.RefID == "[tests-connection]" {

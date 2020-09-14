@@ -12,11 +12,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 type DbSqlite struct {
 	db *sql.DB
 	logger hclog.Logger
+	mux sync.Mutex
 }
 
 const metaCsvTable = "_meta_csv_"
@@ -51,6 +53,9 @@ func (sqlite *DbSqlite) Query(sql string) (*QueryResult, error) {
 }
 
 func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) error {
+	sqlite.mux.Lock()
+	defer sqlite.mux.Unlock()
+
 	sqlite.logger.Info("Loading CSV", "table", tableName, "filename", descriptor.Filename)
 
 	var metaCsv *model.Meta
