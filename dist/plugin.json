@@ -1,0 +1,31 @@
+{
+  "id": "grafana-csv-plugin",
+  "name": "CSV",
+  "type": "datasource",
+  "category": "csv",
+
+  "metrics": true,
+  "annotations": false,
+  "backend": true,
+  "alerting": false,
+  "executable": "grafana-csv-plugin",
+
+  "info": {
+    "description": "Grafana CSV datasource",
+    "author": {
+      "name": "Pavel.Danilin",
+      "url": "https://github.com/paveldanilin"
+    },
+    "logos": {
+      "small": "img/icon.png",
+      "large": "img/icon.png"
+    },
+    "version": "2.0.0",
+    "updated": "2020-06-12"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "6.x.x",
+    "plugins": []
+  }
+}
