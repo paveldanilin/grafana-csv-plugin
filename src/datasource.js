@@ -2,13 +2,12 @@ import _ from 'lodash';
 import ResponseParse from './response_parser';
 
 export default class FileDatasource {
-  constructor(instanceSettings, backendSrv, timeSrv, templateSrv, variableSrv) {
+  constructor(instanceSettings, backendSrv, timeSrv, templateSrv) {
     this.id = instanceSettings.id;
     this.name = instanceSettings.name;
     this.backendSrv = backendSrv;
     this.timeSrv = timeSrv;
     this.templateSrv = templateSrv;
-    this.variableSrv = variableSrv;
     this.responseParser = new ResponseParse();
   }
 
@@ -24,7 +23,7 @@ export default class FileDatasource {
         maxDataPoints: options.maxDataPoints,
         datasourceId: this.id,
         format: target.format,
-        query: this.templateSrv.replace(rawQuery, this.variableSrv.variables, this.interpolateVar),
+        query: this.templateSrv.replace(rawQuery, this.templateSrv.variables, this.interpolateVar),
       };
     });
 
@@ -111,7 +110,7 @@ export default class FileDatasource {
     const interpolatedQuery = {
       refId: refId,
       datasourceId: this.id,
-      query: this.templateSrv.replace(query, this.variableSrv.variables, this.interpolateVar),
+      query: this.templateSrv.replace(query, this.templateSrv.variables, this.interpolateVar),
       format: 'table',
     };
 

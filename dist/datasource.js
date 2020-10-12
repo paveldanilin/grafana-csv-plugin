@@ -35,7 +35,7 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
       }();
 
       FileDatasource = function () {
-        function FileDatasource(instanceSettings, backendSrv, timeSrv, templateSrv, variableSrv) {
+        function FileDatasource(instanceSettings, backendSrv, timeSrv, templateSrv) {
           _classCallCheck(this, FileDatasource);
 
           this.id = instanceSettings.id;
@@ -43,7 +43,6 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
           this.backendSrv = backendSrv;
           this.timeSrv = timeSrv;
           this.templateSrv = templateSrv;
-          this.variableSrv = variableSrv;
           this.responseParser = new ResponseParse();
         }
 
@@ -63,7 +62,7 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
                 maxDataPoints: options.maxDataPoints,
                 datasourceId: _this.id,
                 format: target.format,
-                query: _this.templateSrv.replace(rawQuery, _this.variableSrv.variables, _this.interpolateVar)
+                query: _this.templateSrv.replace(rawQuery, _this.templateSrv.variables, _this.interpolateVar)
               };
             });
 
@@ -153,7 +152,7 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
             var interpolatedQuery = {
               refId: refId,
               datasourceId: this.id,
-              query: this.templateSrv.replace(query, this.variableSrv.variables, this.interpolateVar),
+              query: this.templateSrv.replace(query, this.templateSrv.variables, this.interpolateVar),
               format: 'table'
             };
 

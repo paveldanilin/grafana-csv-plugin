@@ -16,7 +16,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "iteration": 1602414340322,
   "links": [],
   "panels": [
     {
@@ -62,7 +62,7 @@
         {
           "alias": "",
           "format": "time_series",
-          "query": "SELECT $__timeGroup(Transaction_date, 24h) as \"time\", Payment_Type as \"metric\", count(*) as \"value\"\r\nFROM\r\nsales\r\nGROUP BY \"time\", \"metric\"\r\nORDER BY \"time\"",
+          "query": "SELECT $__timeGroup(Transaction_date, 24h) as \"time\", Payment_Type as \"metric\", count(*) as \"value\"\r\nFROM\r\nsales\r\nwhere payment_type = '$PAYMENT_TYPE'\r\nGROUP BY \"time\", \"metric\"\r\nORDER BY \"time\"",
           "refId": "A"
         }
       ],
@@ -156,7 +156,7 @@
         {
           "alias": "",
           "format": "table",
-          "query": "SELECT * FROM sales",
+          "query": "SELECT * FROM sales where Payment_type = '$PAYMENT_TYPE'",
           "refId": "A"
         }
       ],
@@ -172,7 +172,60 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "tags": [],
+          "text": "Mastercard",
+          "value": "Mastercard"
+        },
+        "datasource": "sales",
+        "definition": "SELECT distinct payment_type FROM sales",
+        "hide": 0,
+        "includeAll": false,
+        "index": -1,
+        "label": "Payment type",
+        "multi": false,
+        "name": "PAYMENT_TYPE",
+        "options": [
+          {
+            "$$hashKey": "object:318",
+            "selected": true,
+            "text": "Mastercard",
+            "value": "Mastercard"
+          },
+          {
+            "$$hashKey": "object:319",
+            "selected": false,
+            "text": "Visa",
+            "value": "Visa"
+          },
+          {
+            "$$hashKey": "object:320",
+            "selected": false,
+            "text": "Diners",
+            "value": "Diners"
+          },
+          {
+            "$$hashKey": "object:321",
+            "selected": false,
+            "text": "Amex",
+            "value": "Amex"
+          }
+        ],
+        "query": "SELECT distinct payment_type FROM sales",
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "2008-12-28T23:04:06.874Z",
@@ -198,5 +251,5 @@
   "variables": {
     "list": []
   },
-  "version": 4
+  "version": 1
 }
