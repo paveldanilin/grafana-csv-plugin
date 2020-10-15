@@ -1,5 +1,9 @@
 ## CSV datasource for Grafana 6.x.x
 
+Many thanks to JetBrains for providing the OS license for an amazing GoLand IDE.
+
+[![JetBrains logo](./jetbrains-variant-2.svg)](https://www.jetbrains.com/?from=grafana-csv-plugin)
+
 #### Install
 - Copy files from the `dist` folder to your [Grafana plugin directory](https://grafana.com/docs/grafana/latest/plugins/installation/#grafana-plugin-directory)
 - Ensure that executable file has the execute flag
