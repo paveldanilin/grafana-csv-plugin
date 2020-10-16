@@ -11,8 +11,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 type DbSqlite struct {
@@ -120,21 +120,7 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		sqlite.logger.Error("Failed to read the first data line", "error", err.Error(), "filename", descriptor.Filename)
 		return err
 	}
-	if descriptor.Columns == nil || len(descriptor.Columns) == 0 {
-		columnTypesStr := make([]string, 0)
-		descriptor.Columns = make([]Column, 0)
-		for i, firstRowVal := range firstRow {
-			columnName := header[i]
-			columnType := detectDatatype(firstRowVal)
-			descriptor.Columns = append(descriptor.Columns, Column{
-				Type: columnType,
-				Name: columnName,
-			})
-			columnTypesStr = append(columnTypesStr, fmt.Sprintf("[%s](%s)", columnName, columnType))
-		}
-
-		sqlite.logger.Info("CSV column types have been auto-detected", "filename", descriptor.Filename, "columns", strings.Join(columnTypesStr, ","))
-	}
+	descriptor.Columns = csvHeaderToColumns(header, firstRow, descriptor.Columns)
 
 	// Build map: ColumnName -> CSV column Id
 	csvColumns := getColumnNames(descriptor.Columns)
@@ -199,6 +185,33 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 	sqlite.logger.Debug("Stop inserting", "table", tableName, "inserted", insertedCount, "filename", descriptor.Filename)
 
 	return nil
+}
+
+func csvHeaderToColumns(csvHeader []string, firstDataRow []string, userDefinedColumns []Column) []Column {
+	columns := make([]Column, 0)
+	for i, firstRowVal := range firstDataRow {
+		columnName := csvHeader[i]
+		userDefinedColIndex := getColumnIndex(columnName, userDefinedColumns)
+		if userDefinedColIndex == -1 {
+			columnType := detectDatatype(firstRowVal)
+			columns = append(columns, Column{
+				Type: columnType,
+				Name: columnName,
+			})
+		} else {
+			columns = append(columns, userDefinedColumns[userDefinedColIndex])
+		}
+	}
+	return columns
+}
+
+func getColumnIndex(colName string, userDefinedColumns []Column) int {
+	for i, c := range userDefinedColumns {
+		if c.Name == colName {
+			return i
+		}
+	}
+	return -1
 }
 
 func (sqlite *DbSqlite) exec(sql string) error {
