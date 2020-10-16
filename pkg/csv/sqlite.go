@@ -187,33 +187,6 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 	return nil
 }
 
-func csvHeaderToColumns(csvHeader []string, firstDataRow []string, userDefinedColumns []Column) []Column {
-	columns := make([]Column, 0)
-	for i, firstRowVal := range firstDataRow {
-		columnName := csvHeader[i]
-		userDefinedColIndex := getColumnIndex(columnName, userDefinedColumns)
-		if userDefinedColIndex == -1 {
-			columnType := detectDatatype(firstRowVal)
-			columns = append(columns, Column{
-				Type: columnType,
-				Name: columnName,
-			})
-		} else {
-			columns = append(columns, userDefinedColumns[userDefinedColIndex])
-		}
-	}
-	return columns
-}
-
-func getColumnIndex(colName string, userDefinedColumns []Column) int {
-	for i, c := range userDefinedColumns {
-		if c.Name == colName {
-			return i
-		}
-	}
-	return -1
-}
-
 func (sqlite *DbSqlite) exec(sql string) error {
 	sqlite.logger.Debug("Execute", "sql", sql)
 	_, err := sqlite.db.Exec(sql)
@@ -442,4 +415,31 @@ func strToValue(value string, columnType *ColumnType) interface{} {
 		return fval
 	}
 	return value
+}
+
+func csvHeaderToColumns(csvHeader []string, firstDataRow []string, userDefinedColumns []Column) []Column {
+	columns := make([]Column, 0)
+	for i, firstRowVal := range firstDataRow {
+		columnName := csvHeader[i]
+		userDefinedColIndex := getColumnIndex(columnName, userDefinedColumns)
+		if userDefinedColIndex == -1 {
+			columnType := detectDatatype(firstRowVal)
+			columns = append(columns, Column{
+				Type: columnType,
+				Name: columnName,
+			})
+		} else {
+			columns = append(columns, userDefinedColumns[userDefinedColIndex])
+		}
+	}
+	return columns
+}
+
+func getColumnIndex(colName string, userDefinedColumns []Column) int {
+	for i, c := range userDefinedColumns {
+		if c.Name == colName {
+			return i
+		}
+	}
+	return -1
 }
