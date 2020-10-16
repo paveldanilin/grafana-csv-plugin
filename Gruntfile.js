@@ -25,7 +25,7 @@ module.exports = function(grunt) {
     shell: {
       gobuild: {
         command: function() {
-          return 'go build -o ./dist/' + pluginName + getPluginSuffix() + ' ./pkg';
+          return 'go build.sh -o ./dist/' + pluginName + getPluginSuffix() + ' ./pkg';
         },
       },
     },

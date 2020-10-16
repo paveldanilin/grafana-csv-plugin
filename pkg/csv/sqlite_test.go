@@ -16,6 +16,7 @@ func TestDetectDatatypeInteger(t *testing.T) {
 	assert.Equal(t, ColumnTypeInteger, string(detectDatatype("0")))
 	assert.Equal(t, ColumnTypeInteger, string(detectDatatype("-90")))
 	assert.Equal(t, ColumnTypeInteger, string(detectDatatype("123456789")))
+	assert.Equal(t, ColumnTypeInteger, string(detectDatatype("1200")))
 	assert.NotEqual(t, ColumnTypeInteger, string(detectDatatype("0.34")))
 }
 

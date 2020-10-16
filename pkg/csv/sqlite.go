@@ -355,17 +355,17 @@ func getColumnType(columns []Column, columnName string) *ColumnType {
 }
 
 func detectDatatype(value string) ColumnType {
-	// 1. date time
-	_, err := dateparse.ParseAny(value)
-	if err == nil {
-		return ColumnTypeDate
-	}
-	// 2. number (int/float)
+	// 1. number (int/float)
 	if util.IsNumber(value) {
 		if util.IsInt(value) {
 			return ColumnTypeInteger
 		}
 		return ColumnTypeReal
+	}
+	// 2. date time
+	_, err := dateparse.ParseAny(value)
+	if err == nil {
+		return ColumnTypeDate
 	}
 	// 3. text
 	return ColumnTypeText
