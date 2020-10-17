@@ -41,7 +41,7 @@ main()
 {
   cmd="$1"
   case $cmd in
-    build.sh)
+    build)
       container_build
       shift # past argument
     ;;
