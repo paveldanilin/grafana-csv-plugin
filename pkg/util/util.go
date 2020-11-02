@@ -6,8 +6,23 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
+
+func InArray(arr interface{}, val interface{}) bool {
+	t := reflect.TypeOf(arr).Kind()
+	if t != reflect.Array && t != reflect.Slice {
+		return false
+	}
+	rar := reflect.ValueOf(arr)
+	for i := 0; i < rar.Len(); i++ {
+		if val == rar.Index(i).Interface() {
+			return true
+		}
+	}
+	return false
+}
 
 func MapToArray(m map[string]interface{}) []interface{} {
 	args := make([]interface{}, 0)
@@ -39,11 +54,6 @@ func IsNumber(str string) bool {
 func IsInt(str string) bool {
 	_, err := strconv.ParseInt(str, 10, 64)
 	return err == nil
-}
-
-func FileChanged(filename string, oldSize, oldModTime int64) bool {
-	curSize, curModTime := FileStat(filename)
-	return curSize != oldSize || curModTime != oldModTime
 }
 
 // Returns fileSize, fileModTime
@@ -79,4 +89,39 @@ func ToFloat64(v interface{}) (float64, error) {
 		return float64(i), nil
 	}
 	return float64(0), errors.New(fmt.Sprintf("Could not convert value `%v`.(%s) => float64", v, reflect.TypeOf(v).String()))
+}
+
+// 'm' - minutes
+// 's' - seconds
+// 'ms' - milliseconds
+// 'h' - hours
+func StrToDur(str string) time.Duration {
+	n := 1
+	d := time.Millisecond
+	if strings.HasSuffix(str, "ms") {
+		nv, err := strconv.Atoi(strings.TrimSuffix(str, "ms"))
+		if err == nil {
+			n = nv
+		}
+		d = time.Millisecond
+	} else if strings.HasSuffix(str, "m") {
+		nv, err := strconv.Atoi(strings.TrimSuffix(str, "m"))
+		if err == nil {
+			n = nv
+		}
+		d = time.Minute
+	} else if strings.HasSuffix(str, "s") {
+		nv, err := strconv.Atoi(strings.TrimSuffix(str, "s"))
+		if err == nil {
+			n = nv
+		}
+		d = time.Second
+	} else if strings.HasSuffix(str, "h") {
+		nv, err := strconv.Atoi(strings.TrimSuffix(str, "h"))
+		if err == nil {
+			n = nv
+		}
+		d = time.Hour
+	}
+	return time.Duration(n) * d
 }

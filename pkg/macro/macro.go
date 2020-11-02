@@ -8,18 +8,37 @@ import (
 )
 
 var macroExpr = regexp.MustCompile(`\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?:\.([^:^\}]+))?(?::(\w+))?}/g`)
-
-var errorProcessorNotFound = errors.New("processor not found")
+var ErrProcessorNotFound = errors.New("processor not found")
 var processors = map[string]Processor{}
+
+// Additional instructions with options
+type Meta struct {
+	Name    string
+	Options []string
+}
+
+type Interpolated struct {
+	text     string
+	metaList []Meta
+}
+
+func (i *Interpolated) Text() string {
+	return i.text
+}
+
+func (i *Interpolated) MetaList() []Meta {
+	return i.metaList
+}
 
 func Register(name string, processor Processor) {
 	processors[name] = processor
 }
 
-func Interpolate(text string, scope *Scope) (string, error) {
+func Interpolate(text string, scope *Scope) (*Interpolated, error) {
 	text = normalizeString(text)
 	macrosList := macroExpr.FindAllString(text, 100)
 	globalCursor := 0
+	metas := make([]Meta,0 )
 
 	for _, macrosDef := range macrosList {
 		defStart := strings.Index(text, macrosDef)
@@ -29,24 +48,38 @@ func Interpolate(text string, scope *Scope) (string, error) {
 			// Macros
 			processorCallable, hasProcessor := processors[macrosDef[3:]]
 			if hasProcessor == false {
-				return text, errorProcessorNotFound
+				return nil, ErrProcessorNotFound
 			}
 
 			globalCursor = defEnd + 1 // skip '('
 			args, err := readMacroArgs(text, &globalCursor)
 			if err != nil {
-				return text, err
+				return nil, err
 			}
 
 			processed, err := processorCallable(args, scope)
 			if err != nil {
-				return text, err
+				return nil, err
 			}
 
 			text = fmt.Sprintf("%s%s%s", text[0:defStart], processed , text[globalCursor:])
+		} else if strings.HasPrefix(macrosDef, "$") && text[defEnd] == '(' {
+			globalCursor = defEnd + 1 // skip '('
+			args, err := readMacroArgs(text, &globalCursor)
+			if err != nil {
+				return nil, err
+			}
+			metas = append(metas, Meta{
+				Name:    macrosDef,
+				Options: args,
+			})
+			text = fmt.Sprintf("%s%s%s", text[0:defStart], "" , text[globalCursor:])
 		}
 	}
-	return text, nil
+	return &Interpolated{
+		text:     strings.TrimSpace(text),
+		metaList: metas,
+	}, nil
 }
 
 func readMacroArgs(str string, readFrom *int) ([]string, error) {
@@ -64,7 +97,7 @@ func readMacroArgs(str string, readFrom *int) ([]string, error) {
 			isString = !isString
 		}
 
-		// Args separator found
+		// Options separator found
 		if str[i] == ',' && isString == false  {
 			args = append(args, strings.TrimSpace(str[*readFrom:i]))
 			*readFrom = i + 1 // skip `,`

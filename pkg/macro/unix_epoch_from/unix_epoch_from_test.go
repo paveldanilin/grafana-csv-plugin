@@ -12,7 +12,7 @@ func TestUnixEpochFrom(t *testing.T) {
 	scope := macro.NewScope()
 	scope.SetVar("timeFromMs", 1595844722082)
 
-	text, err := macro.Interpolate("SELECT * FROM my_table WHERE order_date >= $__unixEpochFrom()", scope)
+	text, _, err := macro.Interpolate("SELECT * FROM my_table WHERE order_date >= $__unixEpochFrom()", scope)
 
 	if err != nil {
 		t.Error(err)

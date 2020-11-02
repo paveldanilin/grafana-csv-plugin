@@ -18,7 +18,7 @@ func TestTimeFilter(t *testing.T) {
 	scope.SetVar("timeFrom", datetimeFrom)
 	scope.SetVar("timeTo", datetimeTo)
 
-	text, err := macro.Interpolate("SELECT * FROM my_table WHERE $__timeFilter(DATE_COLUMN) AND status=0", scope)
+	text, _, err := macro.Interpolate("SELECT * FROM my_table WHERE $__timeFilter(DATE_COLUMN) AND status=0", scope)
 
 	if err != nil {
 		t.Error(err)

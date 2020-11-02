@@ -18,7 +18,6 @@ Many thanks to JetBrains for providing the OS license for an amazing GoLand IDE.
 > To get it to work you should make configuration as described in [documentation](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
 
 #### Features
-- Read local CSV file
 - SQL queries (under the hood CSV will be converted into in-memory SQLite3 DB)
 - Auto-detect column types by the first data row
 - Reloading CSV file on changing
@@ -28,6 +27,7 @@ Many thanks to JetBrains for providing the OS license for an amazing GoLand IDE.
   * $__timeGroup(dateColumn, interval)
   * $__unixEpochFrom()
   * $__unixEpochTo()
+  * $autoTime(1m)
 
 #### CSV format
 - Each CSV file must have the first row with column names
@@ -88,13 +88,8 @@ ORDER BY "time"
 ![](./doc/image/grid.png)
 
 #### Config
-- Read local file
 
 ![](./doc/image/config_local.png)
-
-- Read remote file
-
-![](./doc/image/config_sftp.png)
 
 #### Build
 - npm run build

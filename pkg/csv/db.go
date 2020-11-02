@@ -1,5 +1,9 @@
 package csv
 
+import (
+	"github.com/paveldanilin/grafana-csv-plugin/pkg/xsql"
+)
+
 const (
 	ColumnTypeText = "text"
 	ColumnTypeInteger = "integer"
@@ -17,7 +21,7 @@ type Column struct {
 
 type DB interface {
 	Init() error
-	Query(sql string) (*QueryResult, error)
+	Query(sql string, generatedColumns []xsql.GeneratedColumn) (*xsql.QueryResult, error)
 	LoadCSV(tableName string, descriptor *FileDescriptor) error
 }
 

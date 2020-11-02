@@ -51,7 +51,6 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
           value: function query(options) {
             var _this = this;
 
-            // TODO: skip for filtering and process only first query
             var queries = _.filter(options.targets, function (target) {
               return target.hide !== true;
             }).map(function (target) {
@@ -77,10 +76,7 @@ System.register(['lodash', './response_parser'], function (_export, _context) {
               data: {
                 from: options.range.from.valueOf().toString(),
                 to: options.range.to.valueOf().toString(),
-                // !!!!!!!!!!!!!!!!!!!!!!!!!
-                // Perform only first query
-                // !!!!!!!!!!!!!!!!!!!!!!!!!
-                queries: [queries[0]]
+                queries: queries
               },
               method: 'POST'
             }).then(this.responseParser.processQueryResult);

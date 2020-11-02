@@ -6,12 +6,3 @@ type Meta struct {
 	FileSize int64
 	FileModTime int64
 }
-
-func NewMeta(tableName, fileName string, fileSize, fileModTime int64) *Meta {
-	return &Meta{
-		TableName: tableName,
-		FileName: fileName,
-		FileSize: fileSize,
-		FileModTime: fileModTime,
-	}
-}

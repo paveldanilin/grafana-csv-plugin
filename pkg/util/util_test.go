@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"github.com/araddon/dateparse"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -42,4 +43,21 @@ func TestIsInt(t *testing.T) {
 func TestParseany(t *testing.T) {
 	d, _ := dateparse.ParseAny("1595844722082")
 	println(fmt.Sprintf("%v", d))
+}
+
+func TestStrToDur(t *testing.T) {
+	dm := StrToDur("100000ms")
+	fmt.Printf("%v", dm)
+}
+
+func TestInArray_False(t *testing.T) {
+	r := InArray([]string{"a", "b"}, "c")
+
+	assert.False(t, r)
+}
+
+func TestInArray_True(t *testing.T) {
+	r := InArray([]string{"a", "b", "c"}, "b")
+
+	assert.True(t, r)
 }

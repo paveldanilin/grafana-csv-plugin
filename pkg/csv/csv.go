@@ -19,12 +19,20 @@ type FileDescriptor struct {
 	Columns []Column
 }
 
+func (d *FileDescriptor) GetFileSize() int64 {
+	return d.fileSize
+}
+
+func (d *FileDescriptor) GetFileModTime() int64 {
+	return d.fileModTime
+}
+
 type reader struct {
 	file *os.File
 	csv  *csv.Reader
 }
 
-func newCsvReader(descriptor *FileDescriptor) (*reader, error) {
+func NewCsvReader(descriptor *FileDescriptor) (*reader, error) {
 	if descriptor == nil {
 		return nil, errors.New("file descriptor is missed")
 	}
@@ -48,8 +56,12 @@ func newCsvReader(descriptor *FileDescriptor) (*reader, error) {
 	}, nil
 }
 
-func (r *reader) close() {
-	r.file.Close()
+func (r *reader) Read() ([]string, error){
+	return r.csv.Read()
+}
+
+func (r *reader) Close() {
+	_ = r.file.Close()
 	r.file = nil
 	r.csv = nil
 }

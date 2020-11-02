@@ -12,7 +12,6 @@ export default class FileDatasource {
   }
 
   query(options) {
-    // TODO: skip for filtering and process only first query
     const queries = _.filter(options.targets, target => {
       return target.hide !== true;
     }).map(target => {
@@ -38,10 +37,7 @@ export default class FileDatasource {
       data: {
         from: options.range.from.valueOf().toString(),
         to: options.range.to.valueOf().toString(),
-        // !!!!!!!!!!!!!!!!!!!!!!!!!
-        // Perform only first query
-        // !!!!!!!!!!!!!!!!!!!!!!!!!
-        queries: [queries[0]],
+        queries: queries,
       },
       method: 'POST',
     }).then(this.responseParser.processQueryResult);
