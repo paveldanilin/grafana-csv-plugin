@@ -11,8 +11,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 type DbSqlite struct {
@@ -120,21 +120,7 @@ func (sqlite *DbSqlite) LoadCSV(tableName string, descriptor *FileDescriptor) er
 		sqlite.logger.Error("Failed to read the first data line", "error", err.Error(), "filename", descriptor.Filename)
 		return err
 	}
-	if descriptor.Columns == nil || len(descriptor.Columns) == 0 {
-		columnTypesStr := make([]string, 0)
-		descriptor.Columns = make([]Column, 0)
-		for i, firstRowVal := range firstRow {
-			columnName := header[i]
-			columnType := detectDatatype(firstRowVal)
-			descriptor.Columns = append(descriptor.Columns, Column{
-				Type: columnType,
-				Name: columnName,
-			})
-			columnTypesStr = append(columnTypesStr, fmt.Sprintf("[%s](%s)", columnName, columnType))
-		}
-
-		sqlite.logger.Info("CSV column types have been auto-detected", "filename", descriptor.Filename, "columns", strings.Join(columnTypesStr, ","))
-	}
+	descriptor.Columns = csvHeaderToColumns(header, firstRow, descriptor.Columns)
 
 	// Build map: ColumnName -> CSV column Id
 	csvColumns := getColumnNames(descriptor.Columns)
@@ -368,18 +354,20 @@ func getColumnType(columns []Column, columnName string) *ColumnType {
 	return nil
 }
 
-// Caveat: function is not able to guess timestamp format, it will always be Integer
 func detectDatatype(value string) ColumnType {
+	// 1. number (int/float)
 	if util.IsNumber(value) {
 		if util.IsInt(value) {
 			return ColumnTypeInteger
 		}
 		return ColumnTypeReal
 	}
+	// 2. date time
 	_, err := dateparse.ParseAny(value)
 	if err == nil {
 		return ColumnTypeDate
 	}
+	// 3. text
 	return ColumnTypeText
 }
 
@@ -427,4 +415,31 @@ func strToValue(value string, columnType *ColumnType) interface{} {
 		return fval
 	}
 	return value
+}
+
+func csvHeaderToColumns(csvHeader []string, firstDataRow []string, userDefinedColumns []Column) []Column {
+	columns := make([]Column, 0)
+	for i, firstRowVal := range firstDataRow {
+		columnName := csvHeader[i]
+		userDefinedColIndex := getColumnIndex(columnName, userDefinedColumns)
+		if userDefinedColIndex == -1 {
+			columnType := detectDatatype(firstRowVal)
+			columns = append(columns, Column{
+				Type: columnType,
+				Name: columnName,
+			})
+		} else {
+			columns = append(columns, userDefinedColumns[userDefinedColIndex])
+		}
+	}
+	return columns
+}
+
+func getColumnIndex(colName string, userDefinedColumns []Column) int {
+	for i, c := range userDefinedColumns {
+		if c.Name == colName {
+			return i
+		}
+	}
+	return -1
 }
