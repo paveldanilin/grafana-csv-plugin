@@ -31,8 +31,8 @@ type Datasource struct {
 	// SFTP
 	SftpHost		string	`json:"sftpHost,omitempty"`
 	SftpPort		string	`json:"sftpPort,omitempty"`
-	SftpUser		string	`json:"sftUser,omitempty"`
-	SftpPassword		string	`json:"sftPassword,omitempty"`
+	SftpUser		string	`json:"sftpUser,omitempty"`
+	SftpPassword		string	`json:"sftpPassword,omitempty"`
 	SftpWorkingDir		string	`json:"sftpWorkingDir"`		// Local working dir
 	SftpIgnoreHostKey	bool	`json:"sftpIgnoreHostKey"`
 
