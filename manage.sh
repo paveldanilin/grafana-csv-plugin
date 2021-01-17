@@ -2,17 +2,19 @@
 
 function docker_install()
 {
-  echo "MANAGE: Install docker..."
+  echo "Nothing to do"
 
-  yum update -y
-  curl http://repo.net.billing.ru/scripts/add-docker-ce-repo.sh | sudo sh
+  # echo "MANAGE: Install docker..."
 
-  yum install -y epel-release
-  yum install -y yum-utils device-mapper-persistent-data lvm2 python36 docker-ce docker-ce-cli containerd.io docker-compose
-  systemctl start docker
-  systemctl enable docker
+  # yum update -y
+  # curl http://repo.net.billing.ru/scripts/add-docker-ce-repo.sh | sudo sh
 
-  echo "MANAGE: docker has been installed and started!"
+  # yum install -y epel-release
+  # yum install -y yum-utils device-mapper-persistent-data lvm2 python36 docker-ce docker-ce-cli containerd.io docker-compose
+  # systemctl start docker
+  # systemctl enable docker
+
+  # echo "MANAGE: docker has been installed and started!"
 }
 
 function container_build()
